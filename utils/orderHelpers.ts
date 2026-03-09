@@ -2,14 +2,11 @@ import { ORDER_PIPELINE } from '../constants';
 import { OrderStatus, PaymentMethod } from '../types';
 
 export function generateOrderId(): string {
-  return `ORD-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+  return `ORD-${crypto.randomUUID().replace(/-/g, '').slice(0, 8).toUpperCase()}`;
 }
 
 export function generateToken(): string {
-  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
-    return crypto.randomUUID();
-  }
-  return Math.random().toString(36).substr(2, 16) + Math.random().toString(36).substr(2, 16);
+  return crypto.randomUUID();
 }
 
 export function getNextStatus(current: OrderStatus): OrderStatus | null {

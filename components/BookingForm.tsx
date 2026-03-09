@@ -74,8 +74,7 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
           if (error) return { error: error.message ?? 'Payment declined.' };
           return { paymentIntentId: paymentIntent!.id };
         } catch (err) {
-          console.error('[stripe] confirmPayment error:', err);
-          return { error: err instanceof Error ? err.message : 'Payment failed — check console for details.' };
+          return { error: err instanceof Error ? err.message : 'Payment failed. Please try again.' };
         }
       },
     }));

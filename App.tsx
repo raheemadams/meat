@@ -29,10 +29,7 @@ const ORDER_WEBHOOK_URL: string = import.meta.env.VITE_ORDER_WEBHOOK_URL ?? '';
  *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
  *  so the request survives page navigation (e.g. redirect to /track). */
 function notifyOrderConfirmed(order: Order) {
-  if (!ORDER_WEBHOOK_URL) {
-    console.warn('[webhook] No URL configured — skipping');
-    return;
-  }
+  if (!ORDER_WEBHOOK_URL) return;
   const body = JSON.stringify({
     event: 'order.confirmed',
     orderId: order.id,
@@ -52,16 +49,13 @@ function notifyOrderConfirmed(order: Order) {
       status: order.status,
     },
   });
-  console.log('[webhook] Sending to', ORDER_WEBHOOK_URL);
   fetch(ORDER_WEBHOOK_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain' },
     body,
     mode: 'no-cors',
     keepalive: true,
-  })
-    .then(() => console.log('[webhook] Sent (opaque response — no-cors)'))
-    .catch((err) => console.error('[webhook] Send failed:', err));
+  }).catch(() => {/* fire-and-forget */});
 }
 
 function isAdminUser(user: User | null): boolean {
@@ -164,7 +158,6 @@ function AppInner() {
   // onAuthStateChange fires INITIAL_SESSION on mount — no separate getSession() needed.
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('[auth]', event, session?.user?.email ?? null);
 
       if (event === 'TOKEN_REFRESHED') {
         // Count rapid refresh events. If too many fire in a short window it means
@@ -241,10 +234,11 @@ function AppInner() {
     const row = mapOrderToRow(order);
     const { error } = await supabase.from('orders').insert(row);
     if (error) {
-      setOrders((prev) => [order, ...prev]);
-    } else {
-      setOrders((prev) => [order, ...prev]);
+      addToast('Failed to place order. Please try again.', 'error');
+      return;
     }
+
+    setOrders((prev) => [order, ...prev]);
 
     if (order.shares > 1) {
       const msgs = buildSmsMessages(order);
@@ -254,8 +248,6 @@ function AppInner() {
       addToast('Order placed successfully!');
     }
 
-    // Notify webhook if this order is immediately confirmed (card + single share)
-    console.log('[order] status:', order.status, '| CONFIRMED value:', OrderStatus.CONFIRMED, '| match:', order.status === OrderStatus.CONFIRMED);
     if (order.status === OrderStatus.CONFIRMED) {
       notifyOrderConfirmed(order);
     }
