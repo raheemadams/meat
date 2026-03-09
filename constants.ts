@@ -1,7 +1,7 @@
 import { AnimalConfig, OrderStatus } from './types';
 
-export const DELIVERY_CHARGE = 30;
-export const SLAUGHTER_FEE = 75;
+export const DELIVERY_CHARGE = 35;
+export const SLAUGHTER_FEE = 30;
 
 export const APP_EMAIL = 'orders@halalmeats.com';
 export const BUSINESS_NAME = 'Halal Meat Co.';

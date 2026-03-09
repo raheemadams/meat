@@ -23,6 +23,40 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL ?? '')
   .map((e: string) => e.trim().toLowerCase())
   .filter(Boolean);
 
+const ORDER_WEBHOOK_URL: string = import.meta.env.VITE_ORDER_WEBHOOK_URL ?? '';
+
+/** POST order details to the configured webhook when an order is confirmed. */
+async function notifyOrderConfirmed(order: Order) {
+  if (!ORDER_WEBHOOK_URL) return;
+  try {
+    await fetch(ORDER_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event: 'order.confirmed',
+        orderId: order.id,
+        timestamp: Date.now(),
+        order: {
+          id: order.id,
+          animalType: order.animalType,
+          quantity: order.quantity,
+          skinOption: order.skinOption,
+          shares: order.shares,
+          pricing: order.pricing,
+          deliveryAddress: order.deliveryAddress,
+          deliveryDate: order.deliveryDate,
+          deliveryWindow: order.deliveryWindow,
+          paymentMethod: order.paymentMethod,
+          portionOwners: order.portionOwners,
+          status: order.status,
+        },
+      }),
+    });
+  } catch (err) {
+    console.error('[webhook] Failed to notify order confirmed:', err);
+  }
+}
+
 function isAdminUser(user: User | null): boolean {
   if (!user) return false;
   if (user.app_metadata?.role === 'admin') return true;
@@ -211,6 +245,11 @@ function AppInner() {
       addToast('Order placed successfully!');
     }
 
+    // Notify webhook if this order is immediately confirmed (card + single share)
+    if (order.status === OrderStatus.CONFIRMED) {
+      notifyOrderConfirmed(order);
+    }
+
     setSelectedAnimal(null);
     navigate('/track');
   }, [navigate]);
@@ -220,7 +259,11 @@ function AppInner() {
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
     await supabase.from('orders').update({ status }).eq('id', orderId);
-  }, []);
+    if (status === OrderStatus.CONFIRMED) {
+      const order = orders.find((o) => o.id === orderId);
+      if (order) notifyOrderConfirmed({ ...order, status });
+    }
+  }, [orders]);
 
   const advanceOrderStatus = useCallback(async (orderId: string) => {
     const order = orders.find((o) => o.id === orderId);
@@ -245,6 +288,9 @@ function AppInner() {
       .from('orders')
       .update({ portion_owners: updatedOwners, status: newStatus })
       .eq('id', orderId);
+    if (newStatus === OrderStatus.CONFIRMED) {
+      notifyOrderConfirmed({ ...order, portionOwners: updatedOwners, status: newStatus });
+    }
     addToast('Zelle payment verified!');
   }, [orders]);
 
@@ -265,6 +311,9 @@ function AppInner() {
       .from('orders')
       .update({ portion_owners: updatedOwners, status: newStatus })
       .eq('id', orderId);
+    if (newStatus === OrderStatus.CONFIRMED) {
+      notifyOrderConfirmed({ ...order, portionOwners: updatedOwners, status: newStatus });
+    }
   }, [orders]);
 
   const updateAdminNotes = useCallback(async (orderId: string, adminNotes: string) => {
