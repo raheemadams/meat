@@ -18,6 +18,48 @@ const CHART_COLORS: Record<string, string> = {
   Chicken: '#d97706',
 };
 
+function exportOrdersCSV(orders: Order[]) {
+  const headers = [
+    'Order ID', 'Date', 'Animal', 'Qty', 'Skin', 'Shares',
+    'Total ($)', 'Per Share ($)', 'Payment Method', 'Status',
+    'Delivery Date', 'Delivery Window', 'Delivery Address',
+    'Subscription', 'Zelle Ref', 'Admin Notes',
+  ];
+
+  const escape = (v: unknown) => {
+    const s = String(v ?? '').replace(/"/g, '""');
+    return `"${s}"`;
+  };
+
+  const rows = orders.map((o) => [
+    o.id,
+    new Date(o.timestamp).toLocaleDateString(),
+    o.animalType,
+    o.quantity,
+    o.skinOption === 'BURNT' ? 'Skin Burnt' : 'Standard',
+    o.shares,
+    o.pricing.totalPrice.toFixed(2),
+    o.pricing.perShareAmount.toFixed(2),
+    o.paymentMethod,
+    o.status,
+    o.deliveryDate,
+    o.deliveryWindow,
+    o.deliveryAddress,
+    o.subscriptionInterval ? `Every ${o.subscriptionInterval}mo` : 'One-time',
+    o.zelleRefCode ?? '',
+    o.adminNotes ?? '',
+  ].map(escape).join(','));
+
+  const csv = [headers.map(escape).join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `orders-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function AdminDashboard({
   orders,
   onUpdateStatus,
@@ -49,14 +91,24 @@ export default function AdminDashboard({
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-fadeIn">
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-green-700 rounded-xl flex items-center justify-center">
-          <i className="fa-solid fa-shield-halved text-white"></i>
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-green-700 rounded-xl flex items-center justify-center">
+            <i className="fa-solid fa-shield-halved text-white"></i>
+          </div>
+          <div>
+            <h1 className="font-display font-black text-2xl text-slate-800">Admin Dashboard</h1>
+            <p className="text-slate-500 text-sm">{orders.length} total orders</p>
+          </div>
         </div>
-        <div>
-          <h1 className="font-display font-black text-2xl text-slate-800">Admin Dashboard</h1>
-          <p className="text-slate-500 text-sm">{orders.length} total orders</p>
-        </div>
+        <button
+          onClick={() => exportOrdersCSV(orders)}
+          disabled={orders.length === 0}
+          className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+        >
+          <i className="fa-solid fa-file-csv"></i>
+          Export CSV
+        </button>
       </div>
 
       {/* Stats */}

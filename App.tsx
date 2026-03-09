@@ -24,6 +24,42 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL ?? '')
   .filter(Boolean);
 
 const ORDER_WEBHOOK_URL: string = import.meta.env.VITE_ORDER_WEBHOOK_URL ?? '';
+const SUPABASE_URL: string = import.meta.env.VITE_SUPABASE_URL ?? '';
+
+type EmailEvent = 'order.confirmed' | 'order.out_for_delivery' | 'order.delivered';
+
+/** Fire-and-forget email via the send-order-email Edge Function. */
+async function sendOrderEmail(event: EmailEvent, user: User, order: Order) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${SUPABASE_URL}/functions/v1/send-order-email`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        event,
+        to: user.email,
+        customerName: user.user_metadata?.full_name ?? user.email ?? 'Customer',
+        order: {
+          id: order.id,
+          animalType: order.animalType,
+          quantity: order.quantity,
+          skinOption: order.skinOption,
+          shares: order.shares,
+          pricing: order.pricing,
+          deliveryAddress: order.deliveryAddress,
+          deliveryDate: order.deliveryDate,
+          deliveryWindow: order.deliveryWindow,
+          paymentMethod: order.paymentMethod,
+          subscriptionInterval: order.subscriptionInterval,
+        },
+      }),
+    });
+  } catch {/* fire-and-forget */}
+}
 
 /** POST order details to the configured webhook when an order is confirmed.
  *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
@@ -250,22 +286,31 @@ function AppInner() {
 
     if (order.status === OrderStatus.CONFIRMED) {
       notifyOrderConfirmed(order);
+      if (user) sendOrderEmail('order.confirmed', user, order);
     }
 
     setSelectedAnimal(null);
     navigate('/track');
-  }, [navigate]);
+  }, [navigate, user]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, status } : o))
     );
     await supabase.from('orders').update({ status }).eq('id', orderId);
-    if (status === OrderStatus.CONFIRMED) {
-      const order = orders.find((o) => o.id === orderId);
-      if (order) notifyOrderConfirmed({ ...order, status });
+    const order = orders.find((o) => o.id === orderId);
+    if (order) {
+      const updated = { ...order, status };
+      if (status === OrderStatus.CONFIRMED) {
+        notifyOrderConfirmed(updated);
+        if (user) sendOrderEmail('order.confirmed', user, updated);
+      } else if (status === OrderStatus.OUT_FOR_DELIVERY) {
+        if (user) sendOrderEmail('order.out_for_delivery', user, updated);
+      } else if (status === OrderStatus.DELIVERED) {
+        if (user) sendOrderEmail('order.delivered', user, updated);
+      }
     }
-  }, [orders]);
+  }, [orders, user]);
 
   const advanceOrderStatus = useCallback(async (orderId: string) => {
     const order = orders.find((o) => o.id === orderId);
@@ -291,10 +336,12 @@ function AppInner() {
       .update({ portion_owners: updatedOwners, status: newStatus })
       .eq('id', orderId);
     if (newStatus === OrderStatus.CONFIRMED) {
-      notifyOrderConfirmed({ ...order, portionOwners: updatedOwners, status: newStatus });
+      const confirmed = { ...order, portionOwners: updatedOwners, status: newStatus };
+      notifyOrderConfirmed(confirmed);
+      if (user) sendOrderEmail('order.confirmed', user, confirmed);
     }
     addToast('Zelle payment verified!');
-  }, [orders]);
+  }, [orders, user]);
 
   const updatePortionPaid = useCallback(async (orderId: string, paymentLinkToken: string) => {
     const order = orders.find((o) => o.id === orderId);
@@ -314,9 +361,11 @@ function AppInner() {
       .update({ portion_owners: updatedOwners, status: newStatus })
       .eq('id', orderId);
     if (newStatus === OrderStatus.CONFIRMED) {
-      notifyOrderConfirmed({ ...order, portionOwners: updatedOwners, status: newStatus });
+      const confirmed = { ...order, portionOwners: updatedOwners, status: newStatus };
+      notifyOrderConfirmed(confirmed);
+      if (user) sendOrderEmail('order.confirmed', user, confirmed);
     }
-  }, [orders]);
+  }, [orders, user]);
 
   const updateAdminNotes = useCallback(async (orderId: string, adminNotes: string) => {
     setOrders((prev) =>
