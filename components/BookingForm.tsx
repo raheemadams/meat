@@ -115,6 +115,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   // Step 3
   const [address, setAddress] = useState(defaultAddress);
   const [useDifferentAddress, setUseDifferentAddress] = useState(!defaultAddress);
+  const [primaryPhone, setPrimaryPhone] = useState(user.user_metadata?.phone ?? '');
   const [deliveryDate, setDeliveryDate] = useState(getAvailableDates()[0]);
   const [deliveryWindow, setDeliveryWindow] = useState(DELIVERY_WINDOWS[0]);
 
@@ -223,7 +224,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
     const primaryOwner: PortionOwner = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36),
       name: user.user_metadata?.full_name ?? user.email ?? 'Primary',
-      phone: user.user_metadata?.phone ?? '',
+      phone: primaryPhone,
       isPaid: paymentMethod === 'CARD',
       amount: pricing.perShareAmount,
       isPrimary: true,
@@ -554,6 +555,22 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
                     <i className="fa-solid fa-circle-info mr-1"></i>
                     All portions will be delivered to this single address. Your group will distribute amongst themselves.
                   </p>
+                )}
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  Your Phone Number <span className="text-slate-400 font-normal">(for order updates)</span>
+                </label>
+                <input
+                  type="tel"
+                  value={primaryPhone}
+                  onChange={(e) => setPrimaryPhone(e.target.value)}
+                  placeholder="+1 (713) 555-0100"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                />
+                {primaryPhone && !/^\+?[\d\s\-().]{10,}$/.test(primaryPhone) && (
+                  <p className="text-xs text-red-500 mt-1">Enter a valid phone number</p>
                 )}
               </div>
 

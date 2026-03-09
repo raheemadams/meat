@@ -390,6 +390,8 @@ function AppInner() {
       const confirmed = { ...order, portionOwners: updatedOwners, status: newStatus };
       notifyOrderConfirmed(confirmed);
       if (user) sendOrderEmail('order.confirmed', user, confirmed);
+      const primaryPhone = updatedOwners.find((o) => o.isPrimary)?.phone ?? '';
+      sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
     }
     addToast('Zelle payment verified!');
   }, [orders, user]);
@@ -415,6 +417,8 @@ function AppInner() {
       const confirmed = { ...order, portionOwners: updatedOwners, status: newStatus };
       notifyOrderConfirmed(confirmed);
       if (user) sendOrderEmail('order.confirmed', user, confirmed);
+      const primaryPhone = updatedOwners.find((o) => o.isPrimary)?.phone ?? '';
+      sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
     }
   }, [orders, user]);
 
