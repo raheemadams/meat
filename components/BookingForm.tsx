@@ -1,9 +1,14 @@
-import React, { useState, useMemo } from 'react';
+import React, { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { AnimalConfig, Order, OrderStatus, PaymentMethod, PortionOwner, SkinOption } from '../types';
 import { calculatePricing } from '../utils/pricing';
 import { generateOrderId, generateToken, determineInitialStatus, getAvailableDates, formatDate } from '../utils/orderHelpers';
 import { DELIVERY_WINDOWS, SLAUGHTER_FEE, ZELLE_INFO } from '../constants';
+import { supabase } from '../supabase';
+
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '');
 
 interface Props {
   config: AnimalConfig;
@@ -22,6 +27,76 @@ type Step = 1 | 2 | 3 | 4;
 
 const STEP_LABELS = ['Configure', 'Share', 'Delivery', 'Payment'];
 
+// ── Stripe card form ────────────────────────────────────────────────────────
+interface CardFormHandle {
+  confirmPayment: (amountCents: number, orderId: string) => Promise<{ paymentIntentId: string } | { error: string }>;
+}
+
+const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void }>(
+  ({ onCardError }, ref) => {
+    const stripe = useStripe();
+    const elements = useElements();
+
+    useImperativeHandle(ref, () => ({
+      async confirmPayment(amountCents, orderId) {
+        if (!stripe || !elements) return { error: 'Stripe not ready — please try again.' };
+
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+
+          const res = await fetch(
+            `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-payment-intent`,
+            {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${session?.access_token ?? ''}`,
+              },
+              body: JSON.stringify({ amount: amountCents, orderId }),
+            },
+          );
+
+          if (!res.ok) {
+            const text = await res.text().catch(() => '');
+            return { error: `Payment setup failed (${res.status})${text ? ': ' + text : ''}` };
+          }
+
+          const { clientSecret, error: fnError } = await res.json();
+          if (fnError) return { error: fnError };
+
+          const cardEl = elements.getElement(CardElement);
+          if (!cardEl) return { error: 'Card form not ready.' };
+
+          const { paymentIntent, error } = await stripe.confirmCardPayment(clientSecret, {
+            payment_method: { card: cardEl },
+          });
+
+          if (error) return { error: error.message ?? 'Payment declined.' };
+          return { paymentIntentId: paymentIntent!.id };
+        } catch (err) {
+          console.error('[stripe] confirmPayment error:', err);
+          return { error: err instanceof Error ? err.message : 'Payment failed — check console for details.' };
+        }
+      },
+    }));
+
+    return (
+      <div className="bg-white rounded-lg border border-slate-200 px-4 py-3">
+        <CardElement
+          options={{
+            style: {
+              base: { fontSize: '14px', color: '#1e293b', '::placeholder': { color: '#94a3b8' } },
+              invalid: { color: '#dc2626' },
+            },
+          }}
+          onChange={(e) => onCardError(e.error?.message ?? '')}
+        />
+      </div>
+    );
+  },
+);
+
+// ── Main form ────────────────────────────────────────────────────────────────
 export default function BookingForm({ config, user, onClose, onCreateOrder, defaultAddress = '' }: Props) {
   const [step, setStep] = useState<Step>(1);
 
@@ -44,6 +119,8 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   const [zelleConfirmed, setZelleConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
+  const [stripeError, setStripeError] = useState('');
+  const cardFormRef = useRef<CardFormHandle>(null);
 
   const shares = config.canShare && enableSplit ? shareCount : 1;
   const pricing = useMemo(
@@ -72,12 +149,17 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
     });
   }
 
+  function isValidPhone(phone: string): boolean {
+    const digits = phone.replace(/\D/g, '');
+    return digits.length >= 10;
+  }
+
   function canAdvance(): boolean {
     if (step === 1) {
       return quantity >= config.minQuantity;
     }
     if (step === 2) {
-      return members.every((m) => m.name.trim() && m.phone.trim());
+      return members.slice(0, shareCount - 1).every((m) => m.name.trim() && isValidPhone(m.phone));
     }
     if (step === 3) {
       return address.trim().length > 3;
@@ -110,23 +192,39 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   async function handleSubmit() {
     if (!canAdvance()) return;
     setSubmitting(true);
+    setStripeError('');
 
-    // Simulate processing delay
-    setSubmitStatus('Processing payment…');
-    await new Promise((r) => setTimeout(r, 800));
+    const orderId = generateOrderId();
+    let paymentRef: string | undefined;
+
+    if (paymentMethod === 'CARD') {
+      setSubmitStatus('Processing payment…');
+      const result = await cardFormRef.current?.confirmPayment(
+        Math.round(pricing.perShareAmount * 100),
+        orderId,
+      );
+      if (!result || 'error' in result) {
+        setStripeError(result?.error ?? 'Payment failed.');
+        setSubmitting(false);
+        setSubmitStatus('');
+        return;
+      }
+      paymentRef = result.paymentIntentId;
+    }
+
     setSubmitStatus('Confirming order…');
-    await new Promise((r) => setTimeout(r, 600));
+    await new Promise((r) => setTimeout(r, 400));
 
     // Build portion owners
     const primaryOwner: PortionOwner = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36),
       name: user.user_metadata?.full_name ?? user.email ?? 'Primary',
       phone: user.user_metadata?.phone ?? '',
-      isPaid: paymentMethod === 'CARD', // Card = instantly paid, Zelle = pending
+      isPaid: paymentMethod === 'CARD',
       amount: pricing.perShareAmount,
       isPrimary: true,
       paymentMethod,
-      paymentRef: paymentMethod === 'CARD' ? `CC-${Date.now()}` : undefined,
+      paymentRef,
       paymentLinkToken: generateToken(),
     };
 
@@ -143,7 +241,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
     const allOwners = shares > 1 ? [primaryOwner, ...secondaryOwners] : [primaryOwner];
 
     const order: Order = {
-      id: generateOrderId(),
+      id: orderId,
       userId: user.id,
       animalType: config.type,
       quantity,
@@ -339,13 +437,22 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
                           onChange={(e) => updateMember(i, 'name', e.target.value)}
                           className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
                         />
-                        <input
-                          type="tel"
-                          placeholder="Phone Number"
-                          value={m.phone}
-                          onChange={(e) => updateMember(i, 'phone', e.target.value)}
-                          className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-                        />
+                        <div>
+                          <input
+                            type="tel"
+                            placeholder="Phone Number"
+                            value={m.phone}
+                            onChange={(e) => updateMember(i, 'phone', e.target.value)}
+                            className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-400 ${
+                              m.phone && !isValidPhone(m.phone)
+                                ? 'border-red-300 bg-red-50'
+                                : 'border-slate-200'
+                            }`}
+                          />
+                          {m.phone && !isValidPhone(m.phone) && (
+                            <p className="text-xs text-red-500 mt-1">Enter a valid 10-digit number</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -460,25 +567,16 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
 
               {paymentMethod === 'CARD' && (
                 <div className="bg-slate-50 rounded-xl p-4 space-y-3 border border-slate-200">
-                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Card Details (Simulated)</p>
-                  <input
-                    defaultValue="4242 4242 4242 4242"
-                    placeholder="Card Number"
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
-                  />
-                  <div className="grid grid-cols-2 gap-3">
-                    <input defaultValue="12/28" placeholder="MM/YY" className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400" />
-                    <input defaultValue="123" placeholder="CVV" className="border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400" />
-                  </div>
-                  <input
-                    defaultValue={user.user_metadata?.full_name ?? 'John Doe'}
-                    placeholder="Cardholder Name"
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
-                  />
-                  <p className="text-xs text-amber-600">
-                    <i className="fa-solid fa-triangle-exclamation mr-1"></i>
-                    Demo mode — no real charge will occur.
-                  </p>
+                  <p className="text-xs text-slate-400 font-medium uppercase tracking-wide">Card Details</p>
+                  <Elements stripe={stripePromise}>
+                    <CardForm ref={cardFormRef} onCardError={setStripeError} />
+                  </Elements>
+                  {stripeError && (
+                    <p className="text-xs text-red-500 flex items-center gap-1">
+                      <i className="fa-solid fa-circle-exclamation"></i>
+                      {stripeError}
+                    </p>
+                  )}
                 </div>
               )}
 

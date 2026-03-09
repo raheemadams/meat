@@ -128,7 +128,7 @@ export default function AuthModal({ onClose }: Props) {
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="(713) 555-0100"
+                  placeholder="(281) 704-6043"
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
                 />
               </div>

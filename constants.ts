@@ -8,7 +8,7 @@ export const BUSINESS_NAME = 'Halal Meat Co.';
 
 export const ZELLE_INFO = {
   email: APP_EMAIL,
-  phone: '713-555-0100',
+  phone: '281-704-6043',
   businessName: BUSINESS_NAME,
 };
 
