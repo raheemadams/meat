@@ -111,6 +111,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
 
   // Step 3
   const [address, setAddress] = useState(defaultAddress);
+  const [useDifferentAddress, setUseDifferentAddress] = useState(!defaultAddress);
   const [deliveryDate, setDeliveryDate] = useState(getAvailableDates()[0]);
   const [deliveryWindow, setDeliveryWindow] = useState(DELIVERY_WINDOWS[0]);
 
@@ -473,13 +474,41 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Delivery Address (Houston area only)
                 </label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="123 Main St, Houston, TX 77002"
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
+                {defaultAddress && !useDifferentAddress ? (
+                  <div className="border border-green-300 bg-green-50 rounded-xl px-4 py-3 text-sm text-slate-800 flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs text-slate-500 mb-0.5">From your profile</p>
+                      <p className="font-medium">{defaultAddress}</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => { setUseDifferentAddress(true); setAddress(''); }}
+                      className="text-xs text-green-700 underline whitespace-nowrap hover:text-green-900 flex-shrink-0 mt-1"
+                    >
+                      Use different
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                      placeholder="123 Main St, Houston, TX 77002"
+                      className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                      autoFocus
+                    />
+                    {defaultAddress && (
+                      <button
+                        type="button"
+                        onClick={() => { setUseDifferentAddress(false); setAddress(defaultAddress); }}
+                        className="text-xs text-green-700 underline mt-1.5 hover:text-green-900"
+                      >
+                        Use profile address instead
+                      </button>
+                    )}
+                  </div>
+                )}
                 {shares > 1 && (
                   <p className="text-xs text-slate-400 mt-1.5">
                     <i className="fa-solid fa-circle-info mr-1"></i>

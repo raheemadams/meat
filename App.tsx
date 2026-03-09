@@ -446,7 +446,7 @@ function AppInner() {
           user={user}
           onClose={() => setSelectedAnimal(null)}
           onCreateOrder={handleCreateOrder}
-          defaultAddress={userOrders[0]?.deliveryAddress ?? ''}
+          defaultAddress={user.user_metadata?.address ?? ''}
         />
       )}
 
