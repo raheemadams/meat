@@ -29,7 +29,10 @@ const ORDER_WEBHOOK_URL: string = import.meta.env.VITE_ORDER_WEBHOOK_URL ?? '';
  *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
  *  so the request survives page navigation (e.g. redirect to /track). */
 function notifyOrderConfirmed(order: Order) {
-  if (!ORDER_WEBHOOK_URL) return;
+  if (!ORDER_WEBHOOK_URL) {
+    console.warn('[webhook] No URL configured — skipping');
+    return;
+  }
   const body = JSON.stringify({
     event: 'order.confirmed',
     orderId: order.id,
@@ -49,20 +52,14 @@ function notifyOrderConfirmed(order: Order) {
       status: order.status,
     },
   });
-  try {
-    // keepalive ensures the request isn't aborted when the page navigates away.
-    // no-cors + text/plain avoids a CORS preflight so the request always fires
-    // even if the webhook server doesn't return Access-Control-Allow-Origin.
-    fetch(ORDER_WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain' },
-      body,
-      mode: 'no-cors',
-      keepalive: true,
-    }).catch((err) => console.error('[webhook] send failed:', err));
-  } catch (err) {
-    console.error('[webhook] Failed to notify order confirmed:', err);
-  }
+  console.log('[webhook] Sending to', ORDER_WEBHOOK_URL);
+  fetch(ORDER_WEBHOOK_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+  })
+    .then((res) => console.log('[webhook] Response status:', res.status))
+    .catch((err) => console.error('[webhook] Send failed:', err));
 }
 
 function isAdminUser(user: User | null): boolean {
