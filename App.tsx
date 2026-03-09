@@ -61,6 +61,50 @@ async function sendOrderEmail(event: EmailEvent, user: User, order: Order) {
   } catch {/* fire-and-forget */}
 }
 
+const STATUS_SMS: Partial<Record<OrderStatus, string>> = {
+  [OrderStatus.CONFIRMED]:        "Your Halal Meat Co. order {id} has been confirmed! We'll notify you when it's on its way.",
+  [OrderStatus.OUT_FOR_DELIVERY]: "Your Halal Meat Co. order {id} is out for delivery! Expect it during your selected window.",
+  [OrderStatus.DELIVERED]:        "Your Halal Meat Co. order {id} has been delivered. Enjoy! Questions? Reply to this message.",
+};
+
+async function sendStatusSms(status: OrderStatus, phone: string, orderId: string) {
+  const template = STATUS_SMS[status];
+  if (!template || !phone) return;
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ type: 'status_update', to: phone, message: template.replace('{id}', orderId) }),
+    });
+  } catch {/* fire-and-forget */}
+}
+
+async function sendSplitPaymentSms(order: Order, appUrl: string) {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const messages = order.portionOwners
+      .filter((o) => !o.isPrimary)
+      .map((o) => {
+        const animalLabel = order.animalType === 'Chicken'
+          ? `${order.quantity} chickens` : `1 ${order.animalType}`;
+        const link = `${appUrl}#/pay/${o.paymentLinkToken}`;
+        return {
+          to: o.phone,
+          body: `Assalamu Alaikum ${o.name}! You've been added to a halal ${animalLabel} order (${order.id}). Your share: $${o.amount.toFixed(2)}. Pay here: ${link}`,
+        };
+      });
+    if (messages.length === 0) return;
+    await fetch(`${SUPABASE_URL}/functions/v1/send-sms`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ type: 'split_links', messages }),
+    });
+  } catch {/* fire-and-forget */}
+}
+
 /** POST order details to the configured webhook when an order is confirmed.
  *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
  *  so the request survives page navigation (e.g. redirect to /track). */
@@ -279,7 +323,8 @@ function AppInner() {
     if (order.shares > 1) {
       const msgs = buildSmsMessages(order);
       setSmsLog((prev) => [...msgs, ...prev]);
-      addToast(`Order placed! Simulated SMS sent to ${msgs.length} member${msgs.length > 1 ? 's' : ''}.`);
+      sendSplitPaymentSms(order, `${window.location.origin}${window.location.pathname}`);
+      addToast(`Order placed! SMS sent to ${msgs.length} member${msgs.length > 1 ? 's' : ''}.`);
     } else {
       addToast('Order placed successfully!');
     }
@@ -287,6 +332,8 @@ function AppInner() {
     if (order.status === OrderStatus.CONFIRMED) {
       notifyOrderConfirmed(order);
       if (user) sendOrderEmail('order.confirmed', user, order);
+      const primaryPhone = order.portionOwners.find((o) => o.isPrimary)?.phone ?? '';
+      sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, order.id);
     }
 
     setSelectedAnimal(null);
@@ -301,13 +348,17 @@ function AppInner() {
     const order = orders.find((o) => o.id === orderId);
     if (order) {
       const updated = { ...order, status };
+      const primaryPhone = updated.portionOwners.find((o) => o.isPrimary)?.phone ?? '';
       if (status === OrderStatus.CONFIRMED) {
         notifyOrderConfirmed(updated);
         if (user) sendOrderEmail('order.confirmed', user, updated);
+        sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
       } else if (status === OrderStatus.OUT_FOR_DELIVERY) {
         if (user) sendOrderEmail('order.out_for_delivery', user, updated);
+        sendStatusSms(OrderStatus.OUT_FOR_DELIVERY, primaryPhone, orderId);
       } else if (status === OrderStatus.DELIVERED) {
         if (user) sendOrderEmail('order.delivered', user, updated);
+        sendStatusSms(OrderStatus.DELIVERED, primaryPhone, orderId);
       }
     }
   }, [orders, user]);
