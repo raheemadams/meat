@@ -10,6 +10,7 @@ interface Props {
   user: User;
   onClose: () => void;
   onCreateOrder: (order: Order) => void;
+  defaultAddress?: string;
 }
 
 interface ShareMember {
@@ -21,7 +22,7 @@ type Step = 1 | 2 | 3 | 4;
 
 const STEP_LABELS = ['Configure', 'Share', 'Delivery', 'Payment'];
 
-export default function BookingForm({ config, user, onClose, onCreateOrder }: Props) {
+export default function BookingForm({ config, user, onClose, onCreateOrder, defaultAddress = '' }: Props) {
   const [step, setStep] = useState<Step>(1);
 
   // Step 1
@@ -34,7 +35,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder }: Pr
   const [members, setMembers] = useState<ShareMember[]>([{ name: '', phone: '' }, { name: '', phone: '' }]);
 
   // Step 3
-  const [address, setAddress] = useState('');
+  const [address, setAddress] = useState(defaultAddress);
   const [deliveryDate, setDeliveryDate] = useState(getAvailableDates()[0]);
   const [deliveryWindow, setDeliveryWindow] = useState(DELIVERY_WINDOWS[0]);
 

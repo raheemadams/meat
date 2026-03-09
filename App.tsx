@@ -55,10 +55,12 @@ function notifyOrderConfirmed(order: Order) {
   console.log('[webhook] Sending to', ORDER_WEBHOOK_URL);
   fetch(ORDER_WEBHOOK_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'text/plain' },
     body,
+    mode: 'no-cors',
+    keepalive: true,
   })
-    .then((res) => console.log('[webhook] Response status:', res.status))
+    .then(() => console.log('[webhook] Sent (opaque response — no-cors)'))
     .catch((err) => console.error('[webhook] Send failed:', err));
 }
 
@@ -251,6 +253,7 @@ function AppInner() {
     }
 
     // Notify webhook if this order is immediately confirmed (card + single share)
+    console.log('[order] status:', order.status, '| CONFIRMED value:', OrderStatus.CONFIRMED, '| match:', order.status === OrderStatus.CONFIRMED);
     if (order.status === OrderStatus.CONFIRMED) {
       notifyOrderConfirmed(order);
     }
@@ -443,6 +446,7 @@ function AppInner() {
           user={user}
           onClose={() => setSelectedAnimal(null)}
           onCreateOrder={handleCreateOrder}
+          defaultAddress={userOrders[0]?.deliveryAddress ?? ''}
         />
       )}
 
