@@ -88,6 +88,7 @@ function mapRowToOrder(row: Record<string, unknown>): Order {
     zelleRefCode: row.zelle_ref_code as string | undefined,
     adminNotes: row.admin_notes as string | undefined,
     timestamp: row.timestamp as number,
+    subscriptionInterval: row.subscription_interval as Order['subscriptionInterval'],
   };
 }
 
@@ -109,6 +110,7 @@ function mapOrderToRow(order: Order) {
     zelle_ref_code: order.zelleRefCode ?? null,
     admin_notes: order.adminNotes ?? null,
     timestamp: order.timestamp,
+    subscription_interval: order.subscriptionInterval ?? null,
   };
 }
 
