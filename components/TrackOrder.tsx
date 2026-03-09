@@ -1,4 +1,4 @@
-import React from 'react';
+import { useState } from 'react';
 import { Order, OrderStatus } from '../types';
 import { ORDER_PIPELINE, STATUS_BADGE_COLORS } from '../constants';
 import { formatDate } from '../utils/orderHelpers';
@@ -83,6 +83,9 @@ function OrderCard({
   onSimulatePortionPaid: (orderId: string, token: string) => void;
   addToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }) {
+  const isDelivered = order.status === OrderStatus.DELIVERED;
+  const [expanded, setExpanded] = useState(!isDelivered);
+
   const stages = getTimelineStages(order);
   const currentIdx = stages.indexOf(order.status);
   const paidCount = order.portionOwners.filter((o) => o.isPaid).length;
@@ -92,7 +95,10 @@ function OrderCard({
   return (
     <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
       {/* Order header */}
-      <div className="px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-4 flex-wrap">
+      <button
+        onClick={() => setExpanded((e) => !e)}
+        className="w-full text-left px-5 py-4 border-b border-slate-100 flex items-start justify-between gap-4 flex-wrap hover:bg-slate-50 transition-colors"
+      >
         <div>
           <div className="flex items-center gap-2 flex-wrap">
             <span className="font-display font-black text-slate-800 text-sm">{order.id}</span>
@@ -106,12 +112,16 @@ function OrderCard({
             {order.paymentMethod}
           </p>
         </div>
-        <div className="text-right">
-          <p className="font-display font-black text-green-700 text-lg">${order.pricing.totalPrice.toFixed(2)}</p>
-          <p className="text-xs text-slate-400">Placed {new Date(order.timestamp).toLocaleDateString()}</p>
+        <div className="flex items-center gap-3">
+          <div className="text-right">
+            <p className="font-display font-black text-green-700 text-lg">${order.pricing.totalPrice.toFixed(2)}</p>
+            <p className="text-xs text-slate-400">Placed {new Date(order.timestamp).toLocaleDateString()}</p>
+          </div>
+          <i className={`fa-solid fa-chevron-down text-slate-400 transition-transform ${expanded ? 'rotate-180' : ''}`}></i>
         </div>
-      </div>
+      </button>
 
+      {expanded && <>
       {/* Awaiting payments alert */}
       {awaitingPayments && (
         <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center gap-2 text-sm text-amber-800">
@@ -236,6 +246,7 @@ function OrderCard({
           </div>
         </div>
       )}
+      </>}
     </div>
   );
 }
