@@ -1,8 +1,8 @@
-import React, { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
 import { User } from '@supabase/supabase-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
-import { AnimalConfig, Order, OrderStatus, PaymentMethod, PortionOwner, SkinOption } from '../types';
+import { AnimalConfig, Order, PaymentMethod, PortionOwner, SkinOption, SubscriptionInterval } from '../types';
 import { calculatePricing } from '../utils/pricing';
 import { generateOrderId, generateToken, determineInitialStatus, getAvailableDates, formatDate } from '../utils/orderHelpers';
 import { DELIVERY_WINDOWS, SLAUGHTER_FEE, ZELLE_INFO } from '../constants';
@@ -104,6 +104,10 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   const [quantity, setQuantity] = useState(config.minQuantity);
   const [skinOption, setSkinOption] = useState<SkinOption>('NOT_BURNT');
   const [enableSplit, setEnableSplit] = useState(false);
+
+  // Subscription
+  const [enableSubscription, setEnableSubscription] = useState(false);
+  const [subscriptionInterval, setSubscriptionInterval] = useState<SubscriptionInterval>(1);
 
   // Step 2
   const [shareCount, setShareCount] = useState(2);
@@ -257,6 +261,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
       paymentMethod,
       zelleRefCode: paymentMethod === 'ZELLE' ? zelleRefCode : undefined,
       timestamp: Date.now(),
+      subscriptionInterval: enableSubscription ? subscriptionInterval : undefined,
     };
 
     onCreateOrder(order);
@@ -383,6 +388,42 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
                   </div>
                 </div>
               )}
+
+              {/* Subscription toggle */}
+              <div className={`border rounded-xl p-4 transition-colors ${enableSubscription ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}`}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <i className={`fa-solid fa-rotate text-sm ${enableSubscription ? 'text-blue-600' : 'text-slate-400'}`}></i>
+                      <p className="font-semibold text-slate-800 text-sm">Recurring Order</p>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-0.5">Auto-repeat this order on a schedule</p>
+                  </div>
+                  <button
+                    onClick={() => setEnableSubscription((s) => !s)}
+                    className={`w-12 h-6 rounded-full transition-colors flex-shrink-0 ${enableSubscription ? 'bg-blue-600' : 'bg-slate-300'}`}
+                  >
+                    <span className={`block w-5 h-5 bg-white rounded-full shadow transition-transform mx-0.5 ${enableSubscription ? 'translate-x-6' : 'translate-x-0'}`} />
+                  </button>
+                </div>
+                {enableSubscription && (
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    {([1, 2, 3] as SubscriptionInterval[]).map((n) => (
+                      <button
+                        key={n}
+                        onClick={() => setSubscriptionInterval(n)}
+                        className={`py-2 rounded-xl border-2 text-xs font-semibold transition-all ${
+                          subscriptionInterval === n
+                            ? 'border-blue-500 bg-blue-100 text-blue-800'
+                            : 'border-slate-200 text-slate-600 hover:border-blue-300'
+                        }`}
+                      >
+                        {n === 1 ? 'Every month' : `Every ${n} months`}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
 
               {/* Price preview */}
               <PriceBreakdown pricing={pricing} shares={shares} skinOption={skinOption} />

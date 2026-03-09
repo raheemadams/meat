@@ -105,6 +105,12 @@ function OrderCard({
             <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${STATUS_BADGE_COLORS[order.status]}`}>
               {order.status}
             </span>
+            {order.subscriptionInterval && (
+              <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                <i className="fa-solid fa-rotate mr-1"></i>
+                {order.subscriptionInterval === 1 ? 'Monthly' : `Every ${order.subscriptionInterval}mo`}
+              </span>
+            )}
           </div>
           <p className="text-slate-500 text-xs mt-1">
             {order.quantity} {order.animalType}{order.quantity > 1 ? 's' : ''} ·{' '}

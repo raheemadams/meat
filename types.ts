@@ -48,6 +48,8 @@ export interface PricingSnapshot {
   perShareAmount: number;
 }
 
+export type SubscriptionInterval = 1 | 2 | 3; // months
+
 export interface Order {
   id: string;
   userId: string;
@@ -65,6 +67,7 @@ export interface Order {
   zelleRefCode?: string;
   timestamp: number;
   adminNotes?: string;
+  subscriptionInterval?: SubscriptionInterval; // undefined = one-time
 }
 
 export interface SimulatedSms {
