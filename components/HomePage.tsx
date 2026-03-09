@@ -67,20 +67,20 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
               Split the cost with friends and family, each person pays only their share.
             </p>
             <div className="flex flex-wrap gap-3">
-              <a
-                href="#browse"
+              <button
+                onClick={() => document.getElementById('browse')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-green-500 hover:bg-green-400 text-white font-bold px-7 py-3.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-green-500/30"
               >
                 <i className="fa-solid fa-store"></i>
                 Browse Animals
-              </a>
-              <a
-                href="#how-it-works"
+              </button>
+              <button
+                onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
                 className="bg-white/10 hover:bg-white/20 text-white font-semibold px-7 py-3.5 rounded-xl transition-colors flex items-center gap-2 border border-white/20 backdrop-blur-sm"
               >
                 <i className="fa-solid fa-circle-play"></i>
                 How It Works
-              </a>
+              </button>
             </div>
 
             {/* Trust badges */}
@@ -298,18 +298,18 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
             Affordable, transparent, and community-driven.
           </p>
           <div className="flex flex-wrap gap-3 justify-center">
-            <a
-              href="#browse"
+            <button
+              onClick={() => document.getElementById('browse')?.scrollIntoView({ behavior: 'smooth' })}
               className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 hover:shadow-green-400/40"
             >
               Browse Animals
-            </a>
-            <a
-              href="#how-it-works"
+            </button>
+            <button
+              onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
               className="border border-white/30 hover:bg-white/10 text-white font-semibold px-8 py-3.5 rounded-xl transition-colors"
             >
               Learn More
-            </a>
+            </button>
           </div>
         </div>
       </section>
