@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimalConfig } from '../types';
-import { ANIMAL_CONFIGS, BENEFITS } from '../constants';
+import { ANIMAL_CONFIGS, BENEFITS, SLAUGHTER_FEE } from '../constants';
 import AnimalSelector from './AnimalSelector';
 
 interface Props {
@@ -201,7 +201,7 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-stretch">
             {[
               { n: '01', icon: 'fa-hand-pointer', title: 'Choose an Animal', desc: 'Select goat, cow, or bulk chicken and set your quantity.', color: 'from-green-400 to-emerald-500' },
-              { n: '02', icon: 'fa-fire', title: 'Pick Processing Style', desc: 'Choose skin burnt (+$75) or standard clean skinning — available for goat and cow.', color: 'from-orange-400 to-amber-500' },
+              { n: '02', icon: 'fa-fire', title: 'Pick Processing Style', desc: `Choose skin burnt (+$${SLAUGHTER_FEE}) or standard clean skinning — available for goat and cow.`, color: 'from-orange-400 to-amber-500' },
               { n: '03', icon: 'fa-users', title: 'Split the Cost', desc: "Optionally add co-buyers — each gets their own payment link via SMS.", color: 'from-blue-400 to-cyan-500' },
               { n: '04', icon: 'fa-truck-fast', title: 'Single Delivery', desc: 'Everything delivered to one address on your chosen date.', color: 'from-purple-400 to-violet-500' },
             ].map((step, i) => (
@@ -249,7 +249,7 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <h3 className="font-display font-black text-slate-800 text-lg">Skin Burnt</h3>
-                    <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">+$75</span>
+                    <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-0.5 rounded-full">+${SLAUGHTER_FEE}</span>
                   </div>
                   <p className="text-slate-600 text-sm leading-relaxed">
                     Traditional flame-based skin removal. Culturally preferred by many communities for its distinct texture and authentic preparation.

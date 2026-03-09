@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimalConfig } from '../types';
+import { SLAUGHTER_FEE } from '../constants';
 
 interface Props {
   configs: AnimalConfig[];
@@ -99,7 +100,7 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
           {config.type !== 'Chicken' && (
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <i className="fa-solid fa-fire text-orange-400 w-3"></i>
-              Skin burnt (+$75) or standard — your choice
+              Skin burnt (+${SLAUGHTER_FEE}) or standard — your choice
             </div>
           )}
           <div className="flex items-center gap-2 text-xs text-slate-500">

@@ -25,33 +25,41 @@ const ADMIN_EMAILS = (import.meta.env.VITE_ADMIN_EMAIL ?? '')
 
 const ORDER_WEBHOOK_URL: string = import.meta.env.VITE_ORDER_WEBHOOK_URL ?? '';
 
-/** POST order details to the configured webhook when an order is confirmed. */
-async function notifyOrderConfirmed(order: Order) {
+/** POST order details to the configured webhook when an order is confirmed.
+ *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
+ *  so the request survives page navigation (e.g. redirect to /track). */
+function notifyOrderConfirmed(order: Order) {
   if (!ORDER_WEBHOOK_URL) return;
+  const body = JSON.stringify({
+    event: 'order.confirmed',
+    orderId: order.id,
+    timestamp: Date.now(),
+    order: {
+      id: order.id,
+      animalType: order.animalType,
+      quantity: order.quantity,
+      skinOption: order.skinOption,
+      shares: order.shares,
+      pricing: order.pricing,
+      deliveryAddress: order.deliveryAddress,
+      deliveryDate: order.deliveryDate,
+      deliveryWindow: order.deliveryWindow,
+      paymentMethod: order.paymentMethod,
+      portionOwners: order.portionOwners,
+      status: order.status,
+    },
+  });
   try {
-    await fetch(ORDER_WEBHOOK_URL, {
+    // keepalive ensures the request isn't aborted when the page navigates away.
+    // no-cors + text/plain avoids a CORS preflight so the request always fires
+    // even if the webhook server doesn't return Access-Control-Allow-Origin.
+    fetch(ORDER_WEBHOOK_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        event: 'order.confirmed',
-        orderId: order.id,
-        timestamp: Date.now(),
-        order: {
-          id: order.id,
-          animalType: order.animalType,
-          quantity: order.quantity,
-          skinOption: order.skinOption,
-          shares: order.shares,
-          pricing: order.pricing,
-          deliveryAddress: order.deliveryAddress,
-          deliveryDate: order.deliveryDate,
-          deliveryWindow: order.deliveryWindow,
-          paymentMethod: order.paymentMethod,
-          portionOwners: order.portionOwners,
-          status: order.status,
-        },
-      }),
-    });
+      headers: { 'Content-Type': 'text/plain' },
+      body,
+      mode: 'no-cors',
+      keepalive: true,
+    }).catch((err) => console.error('[webhook] send failed:', err));
   } catch (err) {
     console.error('[webhook] Failed to notify order confirmed:', err);
   }
