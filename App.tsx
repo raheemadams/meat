@@ -260,13 +260,13 @@ function AppInner() {
         return;
       }
 
-      // Only update user when the identity actually changes — TOKEN_REFRESHED
-      // fires the same user repeatedly and would otherwise re-trigger the
-      // fetchOrders effect, creating a refresh → fetchOrders → refresh loop.
+      // Update user when identity or metadata changes. Skip TOKEN_REFRESHED with
+      // identical metadata — that event fires repeatedly and caused a fetchOrders loop.
       setUser((prev) => {
         const next = session?.user ?? null;
-        if (prev?.id === next?.id) return prev;
-        return next;
+        if (prev?.id !== next?.id) return next;
+        if (event === 'USER_UPDATED') return next; // always apply profile edits
+        return prev; // same user, ignore TOKEN_REFRESHED noise
       });
       setAuthReady(true);
 
