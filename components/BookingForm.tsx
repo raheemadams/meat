@@ -233,7 +233,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
       paymentLinkToken: generateToken(),
     };
 
-    const secondaryOwners: PortionOwner[] = members.map((m, i) => ({
+    const secondaryOwners: PortionOwner[] = members.slice(0, shareCount - 1).map((m, i) => ({
       id: `secondary-${i}-${Date.now()}`,
       name: m.name,
       phone: m.phone,
