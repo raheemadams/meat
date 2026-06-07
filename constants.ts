@@ -49,7 +49,7 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     id: 'goat-meat',
     type: 'Goat Meat',
     pricePerUnit: 24,
-    image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&q=80&w=800',
+    image: '/images/goat-meat.png',
     description: 'Fresh halal goat meat, cut and ready to cook.',
     canShare: false,
     maxShares: 1,
