@@ -28,8 +28,8 @@ interface EmailRequest {
 }
 
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const FROM_EMAIL = Deno.env.get('FROM_EMAIL') ?? 'orders@halalmeatco.com';
-const APP_URL = Deno.env.get('APP_URL') ?? 'https://halalmeatco.com';
+const FROM_EMAIL = Deno.env.get('FROM_EMAIL') ?? 'orders@halaliy.com';
+const APP_URL = Deno.env.get('APP_URL') ?? 'https://halaliy.com';
 
 function buildEmailContent(event: EmailEvent, customerName: string, order: OrderSummary): { subject: string; html: string } {
   const first = customerName.split(' ')[0] || 'there';
@@ -60,7 +60,7 @@ function buildEmailContent(event: EmailEvent, customerName: string, order: Order
     <html><body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,sans-serif">
       <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
         <div style="background:#15803d;padding:24px 32px">
-          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800">Halal Meat Co.</h1>
+          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800">Halaliy</h1>
         </div>
         <div style="padding:32px">
           <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a">${title}</h2>
@@ -68,7 +68,7 @@ function buildEmailContent(event: EmailEvent, customerName: string, order: Order
           ${body}
           ${orderBlock}
           ${trackBtn}
-          <p style="margin:24px 0 0;color:#94a3b8;font-size:12px">Halal Meat Co. · Houston, TX · <a href="${APP_URL}" style="color:#94a3b8">halalmeatco.com</a></p>
+          <p style="margin:24px 0 0;color:#94a3b8;font-size:12px">Halaliy · Houston, TX · <a href="${APP_URL}" style="color:#94a3b8">halaliy.com</a></p>
         </div>
       </div>
     </body></html>`;

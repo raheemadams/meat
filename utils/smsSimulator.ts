@@ -26,6 +26,6 @@ function buildSmsText(owner: PortionOwner, order: Order): string {
     `Assalamu Alaikum ${owner.name}! You've been added to a group halal ${animalLabel} order ` +
     `(${order.id}). Your share is $${owner.amount.toFixed(2)}. ` +
     `Please complete your payment at the link below. ` +
-    `Delivery to ${order.deliveryAddress} on ${order.deliveryDate}. — Halal Meat Co.`
+    `Delivery to ${order.deliveryAddress} on ${order.deliveryDate}. — Halaliy`
   );
 }

@@ -1,10 +1,10 @@
 import { AnimalConfig, OrderStatus } from './types';
 
 export const DELIVERY_CHARGE = 35;
-export const SLAUGHTER_FEE = 30;
+export const SLAUGHTER_FEE = 20;
 
-export const APP_EMAIL = 'orders@halalmeats.com';
-export const BUSINESS_NAME = 'Halal Meat Co.';
+export const APP_EMAIL = 'orders@halaliy.com';
+export const BUSINESS_NAME = 'Halaliy';
 
 export const ZELLE_INFO = {
   email: APP_EMAIL,
@@ -47,6 +47,37 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     canShare: false,
     maxShares: 1,
     minQuantity: 5,
+  },
+  {
+    id: 'goat-meat',
+    type: 'Goat Meat',
+    pricePerUnit: 24,
+    image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&q=80&w=800',
+    description: 'Fresh halal goat meat, hand-cut and vacuum-sealed. Ready to cook — no preparation needed.',
+    canShare: false,
+    maxShares: 1,
+    minQuantity: 1,
+    isBagged: true,
+    variants: [
+      { weightLabel: '2 lb',  price: 24  },
+      { weightLabel: '5 lb',  price: 60  },
+      { weightLabel: '10 lb', price: 120 },
+    ],
+  },
+  {
+    id: 'cow-skin',
+    type: 'Cow Skin',
+    pricePerUnit: 24,
+    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800',
+    description: 'Halal-certified cow skin, cleaned and ready to cook. A staple for soups, stews, and traditional dishes.',
+    canShare: false,
+    maxShares: 1,
+    minQuantity: 1,
+    isBagged: true,
+    variants: [
+      { weightLabel: '2 lb', price: 24 },
+      { weightLabel: '5 lb', price: 60 },
+    ],
   },
 ];
 

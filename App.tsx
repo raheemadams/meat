@@ -62,9 +62,9 @@ async function sendOrderEmail(event: EmailEvent, user: User, order: Order) {
 }
 
 const STATUS_SMS: Partial<Record<OrderStatus, string>> = {
-  [OrderStatus.CONFIRMED]:        "Your Halal Meat Co. order {id} has been confirmed! We'll notify you when it's on its way.",
-  [OrderStatus.OUT_FOR_DELIVERY]: "Your Halal Meat Co. order {id} is out for delivery! Expect it during your selected window.",
-  [OrderStatus.DELIVERED]:        "Your Halal Meat Co. order {id} has been delivered. Enjoy! Questions? Reply to this message.",
+  [OrderStatus.CONFIRMED]:        "Your Halaliy order {id} has been confirmed! We'll notify you when it's on its way.",
+  [OrderStatus.OUT_FOR_DELIVERY]: "Your Halaliy order {id} is out for delivery! Expect it during your selected window.",
+  [OrderStatus.DELIVERED]:        "Your Halaliy order {id} has been delivered. Enjoy! Questions? Reply to this message.",
 };
 
 async function sendStatusSms(status: OrderStatus, phone: string, orderId: string) {
@@ -163,6 +163,7 @@ function mapRowToOrder(row: Record<string, unknown>): Order {
     adminNotes: row.admin_notes as string | undefined,
     timestamp: row.timestamp as number,
     subscriptionInterval: row.subscription_interval as Order['subscriptionInterval'],
+    bagSize: row.bag_size as string | undefined,
   };
 }
 
@@ -185,6 +186,7 @@ function mapOrderToRow(order: Order) {
     admin_notes: order.adminNotes ?? null,
     timestamp: order.timestamp,
     subscription_interval: order.subscriptionInterval ?? null,
+    bag_size: order.bagSize ?? null,
   };
 }
 
@@ -555,7 +557,7 @@ function AppInner() {
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
       <footer className="bg-slate-900 text-slate-400 text-center py-6 text-sm mt-auto">
-        <p>© {new Date().getFullYear()} Halal Meat Co. — Houston, TX</p>
+        <p>© {new Date().getFullYear()} Halaliy — Houston, TX</p>
         <p className="mt-1 text-slate-500 text-xs">
           Ethically raised · Halal certified · Community sharing
         </p>

@@ -8,9 +8,11 @@ interface Props {
 }
 
 const CARD_ACCENTS: Record<string, { gradient: string; badge: string; ring: string }> = {
-  Goat:    { gradient: 'from-amber-500/10 to-orange-600/5', badge: 'bg-amber-50 text-amber-700 border-amber-200', ring: 'hover:ring-amber-400/30' },
-  Cow:     { gradient: 'from-slate-500/10 to-slate-600/5',  badge: 'bg-slate-100 text-slate-700 border-slate-300', ring: 'hover:ring-slate-400/30' },
-  Chicken: { gradient: 'from-yellow-400/10 to-amber-500/5', badge: 'bg-yellow-50 text-yellow-700 border-yellow-200', ring: 'hover:ring-yellow-400/30' },
+  Goat:       { gradient: 'from-amber-500/10 to-orange-600/5',  badge: 'bg-amber-50 text-amber-700 border-amber-200',   ring: 'hover:ring-amber-400/30' },
+  Cow:        { gradient: 'from-slate-500/10 to-slate-600/5',   badge: 'bg-slate-100 text-slate-700 border-slate-300',  ring: 'hover:ring-slate-400/30' },
+  Chicken:    { gradient: 'from-yellow-400/10 to-amber-500/5',  badge: 'bg-yellow-50 text-yellow-700 border-yellow-200', ring: 'hover:ring-yellow-400/30' },
+  'Goat Meat':{ gradient: 'from-orange-400/10 to-red-500/5',    badge: 'bg-orange-50 text-orange-700 border-orange-200', ring: 'hover:ring-orange-400/30' },
+  'Cow Skin': { gradient: 'from-stone-400/10 to-stone-500/5',   badge: 'bg-stone-100 text-stone-700 border-stone-300',  ring: 'hover:ring-stone-400/30' },
 };
 
 export default function AnimalSelector({ configs, onSelect }: Props) {
@@ -45,7 +47,7 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
             <i className="fa-solid fa-certificate text-xs"></i>
             HALAL ✓
           </span>
-          {!config.canShare && (
+          {config.type === 'Chicken' && (
             <span className="bg-slate-900/80 backdrop-blur-sm text-white text-xs font-medium px-2.5 py-1 rounded-full">
               Min {config.minQuantity} birds
             </span>
@@ -55,10 +57,10 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
         {/* Price */}
         <div className="absolute bottom-3 right-3 bg-white rounded-xl px-3 py-1.5 shadow-lg">
           <span className="font-display font-black text-green-700 text-lg leading-none">
-            ${config.pricePerUnit.toLocaleString()}
+            {config.variants ? '$12' : `$${config.pricePerUnit.toLocaleString()}`}
           </span>
           <span className="text-slate-400 text-xs block text-right leading-none">
-            {config.type === 'Chicken' ? '/bird' : '/whole'}
+            {config.variants ? '/lb' : config.type === 'Chicken' ? '/bird' : '/whole'}
           </span>
         </div>
 
@@ -97,7 +99,7 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
               Up to {config.maxShares} people split the cost
             </div>
           )}
-          {config.type !== 'Chicken' && (
+          {config.type === 'Goat' && (
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <i className="fa-solid fa-fire text-orange-400 w-3"></i>
               Skin burnt (+${SLAUGHTER_FEE}) or standard — your choice
@@ -107,7 +109,7 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
             <i className="fa-solid fa-circle-check text-green-500 w-3"></i>
             Single delivery to one address
           </div>
-          {!config.canShare && (
+          {config.type === 'Chicken' && (
             <div className="flex items-center gap-2 text-xs text-slate-500">
               <i className="fa-solid fa-circle-check text-green-500 w-3"></i>
               Minimum {config.minQuantity} birds per order

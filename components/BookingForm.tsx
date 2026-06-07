@@ -103,6 +103,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   const [quantity, setQuantity] = useState(config.minQuantity);
   const [skinOption, setSkinOption] = useState<SkinOption>('NOT_BURNT');
   const [enableSplit, setEnableSplit] = useState(false);
+  const [selectedVariant, setSelectedVariant] = useState(config.variants?.[0] ?? null);
 
   // Subscription
   const [enableSubscription, setEnableSubscription] = useState(false);
@@ -128,9 +129,13 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
   const cardFormRef = useRef<CardFormHandle>(null);
 
   const shares = config.canShare && enableSplit ? shareCount : 1;
+  const effectiveConfig = useMemo(
+    () => selectedVariant ? { ...config, pricePerUnit: selectedVariant.price } : config,
+    [config, selectedVariant]
+  );
   const pricing = useMemo(
-    () => calculatePricing(config, quantity, skinOption, shares),
-    [config, quantity, skinOption, shares]
+    () => calculatePricing(effectiveConfig, quantity, skinOption, shares),
+    [effectiveConfig, quantity, skinOption, shares]
   );
 
   const zelleRefCode = useMemo(() => `HMC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`, []);
@@ -262,6 +267,7 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
       zelleRefCode: paymentMethod === 'ZELLE' ? zelleRefCode : undefined,
       timestamp: Date.now(),
       subscriptionInterval: enableSubscription ? subscriptionInterval : undefined,
+      bagSize: selectedVariant?.weightLabel,
     };
 
     onCreateOrder(order);
@@ -299,6 +305,27 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
           {/* ── Step 1: Configure ── */}
           {step === 1 && (
             <div className="space-y-5 animate-fadeIn">
+              {/* Size selector — bagged products only */}
+              {config.variants && (
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">Size</label>
+                  <div className="flex flex-wrap gap-2">
+                    {config.variants.map((v) => (
+                      <button
+                        key={v.weightLabel}
+                        onClick={() => setSelectedVariant(v)}
+                        className={`px-4 py-2 rounded-xl border-2 text-sm font-semibold transition-colors ${
+                          selectedVariant?.weightLabel === v.weightLabel
+                            ? 'border-green-600 bg-green-50 text-green-700'
+                            : 'border-slate-200 text-slate-600 hover:border-green-300'
+                        }`}
+                      >
+                        {v.weightLabel} — ${v.price}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Quantity{config.type === 'Chicken' ? ` (min ${config.minQuantity})` : ''}
@@ -325,8 +352,8 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
                 )}
               </div>
 
-              {/* Skin option — not applicable for Chicken */}
-              {config.type !== 'Chicken' && (
+              {/* Skin option — Goat only */}
+              {config.type === 'Goat' && (
                 <div
                   className={`border rounded-xl p-4 transition-colors ${
                     skinOption === 'BURNT' ? 'bg-orange-50 border-orange-200' : 'bg-slate-50 border-slate-200'

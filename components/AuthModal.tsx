@@ -61,7 +61,7 @@ export default function AuthModal({ onClose }: Props) {
             <h2 className="font-display text-white text-xl font-bold">
               {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
-            <p className="text-green-100 text-sm mt-0.5">Halal Meat Co.</p>
+            <p className="text-green-100 text-sm mt-0.5">Halaliy</p>
           </div>
           <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
             <i className="fa-solid fa-xmark text-xl"></i>

@@ -1,4 +1,4 @@
-export type AnimalType = 'Goat' | 'Cow' | 'Chicken';
+export type AnimalType = 'Goat' | 'Cow' | 'Chicken' | 'Goat Meat' | 'Cow Skin';
 
 export type SkinOption = 'BURNT' | 'NOT_BURNT';
 
@@ -16,6 +16,11 @@ export enum OrderStatus {
   DELIVERED            = 'Delivered',
 }
 
+export interface BagVariant {
+  weightLabel: string; // e.g. '2 lb', '5 lb'
+  price: number;
+}
+
 export interface AnimalConfig {
   id: string;
   type: AnimalType;
@@ -26,6 +31,8 @@ export interface AnimalConfig {
   maxShares: number;
   minQuantity: number;
   sharingLabel?: string;
+  isBagged?: boolean;       // pre-cut bag product (no skin option, no sharing)
+  variants?: BagVariant[];  // available sizes; customer picks one in booking form
 }
 
 export interface PortionOwner {
@@ -68,6 +75,7 @@ export interface Order {
   timestamp: number;
   adminNotes?: string;
   subscriptionInterval?: SubscriptionInterval; // undefined = one-time
+  bagSize?: string; // selected weight label for bagged products, e.g. '2 lb'
 }
 
 export interface SimulatedSms {
