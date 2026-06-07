@@ -289,9 +289,11 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-slate-900/50" />
         <div className="relative max-w-2xl mx-auto px-4 text-center text-white">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-500 rounded-2xl mb-6 shadow-lg shadow-green-500/40">
-            <i className="fa-solid fa-drumstick-bite text-white text-2xl"></i>
-          </div>
+          <img
+            src="/logo-mark.png"
+            alt="Halaliy"
+            className="w-16 h-16 mx-auto mb-6 block rounded-2xl shadow-lg shadow-green-500/40"
+          />
           <h2 className="font-display font-black text-4xl mb-4">Ready to Order?</h2>
           <p className="text-slate-300 text-lg mb-8 leading-relaxed">
             Join hundreds of Houston families sharing halal meat orders.
@@ -302,7 +304,7 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
               onClick={() => document.getElementById('browse')?.scrollIntoView({ behavior: 'smooth' })}
               className="bg-green-500 hover:bg-green-400 text-white font-bold px-8 py-3.5 rounded-xl transition-all shadow-lg shadow-green-500/30 hover:shadow-green-400/40"
             >
-              Browse Animals
+              Order Now
             </button>
             <button
               onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
