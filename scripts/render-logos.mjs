@@ -14,6 +14,7 @@ const jobs = [
   { src: 'logo-mark.svg', out: 'favicon-64.png', w: 64, h: 64 },
   { src: 'logo-full.svg', out: 'logo-full.png', w: 840, h: 192 }, // ~3x for crisp email/header use
   { src: 'og-image.svg', out: 'og-image.png', w: 1200, h: 630 },
+  { src: 'brand-sheet.svg', out: 'brand-sheet.png', w: 1600, h: 1220 },
 ];
 
 for (const j of jobs) {

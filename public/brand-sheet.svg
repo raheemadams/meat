@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1220" width="1600" height="1220" font-family="Inter, Arial, sans-serif">
+  <defs>
+    <linearGradient id="hdr" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#020617"/>
+      <stop offset="1" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="1220" fill="#ffffff"/>
+
+  <!-- ── Header band ── -->
+  <rect width="1600" height="240" fill="url(#hdr)"/>
+  <circle cx="1430" cy="40" r="180" fill="#22c55e" opacity="0.10"/>
+  <g transform="translate(60,70)">
+    <rect width="100" height="100" rx="28" fill="#15803d"/>
+    <path d="M34 27v46M66 27v46M34 50h32" stroke="#ffffff" stroke-width="9" stroke-linecap="round"/>
+  </g>
+  <text x="185" y="125" font-family="Outfit, Arial, sans-serif" font-size="72" font-weight="900" letter-spacing="-2">
+    <tspan fill="#ffffff">Halal</tspan><tspan fill="#4ade80">iy</tspan>
+  </text>
+  <text x="188" y="170" font-size="26" font-weight="600" fill="#94a3b8">Fresh. Shared. Delivered.</text>
+  <text x="1540" y="135" text-anchor="end" font-size="24" font-weight="700" fill="#22c55e" letter-spacing="1">halaliy.com</text>
+
+  <!-- ── Colors ── -->
+  <text x="60" y="320" font-family="Outfit, Arial, sans-serif" font-size="34" font-weight="800" fill="#0f172a">Color Palette</text>
+
+  <!-- Row 1: greens + amber -->
+  <g font-size="20">
+    <g transform="translate(60,350)"><rect width="230" height="110" rx="14" fill="#15803d"/><text x="0" y="148" font-weight="700" fill="#0f172a">Brand Green</text><text x="0" y="176" fill="#64748b">#15803D</text></g>
+    <g transform="translate(310,350)"><rect width="230" height="110" rx="14" fill="#22c55e"/><text x="0" y="148" font-weight="700" fill="#0f172a">Action Green</text><text x="0" y="176" fill="#64748b">#22C55E</text></g>
+    <g transform="translate(560,350)"><rect width="230" height="110" rx="14" fill="#16a34a"/><text x="0" y="148" font-weight="700" fill="#0f172a">Green Hover</text><text x="0" y="176" fill="#64748b">#16A34A</text></g>
+    <g transform="translate(810,350)"><rect width="230" height="110" rx="14" fill="#4ade80"/><text x="0" y="148" font-weight="700" fill="#0f172a">Accent Green</text><text x="0" y="176" fill="#64748b">#4ADE80</text></g>
+    <g transform="translate(1060,350)"><rect width="230" height="110" rx="14" fill="#6ee7b7"/><text x="0" y="148" font-weight="700" fill="#0f172a">Soft Emerald</text><text x="0" y="176" fill="#64748b">#6EE7B7</text></g>
+    <g transform="translate(1310,350)"><rect width="230" height="110" rx="14" fill="#f59e0b"/><text x="0" y="148" font-weight="700" fill="#0f172a">Warm Amber</text><text x="0" y="176" fill="#64748b">#F59E0B</text></g>
+  </g>
+
+  <!-- Row 2: neutrals -->
+  <g font-size="20">
+    <g transform="translate(60,590)"><rect width="230" height="110" rx="14" fill="#020617"/><text x="0" y="148" font-weight="700" fill="#0f172a">Dark Primary</text><text x="0" y="176" fill="#64748b">#020617</text></g>
+    <g transform="translate(310,590)"><rect width="230" height="110" rx="14" fill="#052e16"/><text x="0" y="148" font-weight="700" fill="#0f172a">Deep Dark</text><text x="0" y="176" fill="#64748b">#052E16</text></g>
+    <g transform="translate(560,590)"><rect width="230" height="110" rx="14" fill="#0f172a"/><text x="0" y="148" font-weight="700" fill="#0f172a">Heading</text><text x="0" y="176" fill="#64748b">#0F172A</text></g>
+    <g transform="translate(810,590)"><rect width="230" height="110" rx="14" fill="#475569"/><text x="0" y="148" font-weight="700" fill="#0f172a">Body</text><text x="0" y="176" fill="#64748b">#475569</text></g>
+    <g transform="translate(1060,590)"><rect width="230" height="110" rx="14" fill="#94a3b8"/><text x="0" y="148" font-weight="700" fill="#0f172a">Muted</text><text x="0" y="176" fill="#64748b">#94A3B8</text></g>
+    <g transform="translate(1310,590)"><rect width="230" height="110" rx="14" fill="#f8fafc" stroke="#e2e8f0"/><text x="0" y="148" font-weight="700" fill="#0f172a">Light BG</text><text x="0" y="176" fill="#64748b">#F8FAFC</text></g>
+  </g>
+
+  <!-- ── Typography ── -->
+  <text x="60" y="850" font-family="Outfit, Arial, sans-serif" font-size="34" font-weight="800" fill="#0f172a">Typography</text>
+  <text x="60" y="912" font-family="Outfit, Arial, sans-serif" font-size="56" font-weight="900" fill="#0f172a" letter-spacing="-1">Outfit — Display &amp; Headings</text>
+  <text x="60" y="950" font-size="22" fill="#64748b">Weights 700 / 800 / 900 · tight tracking</text>
+  <text x="60" y="1010" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="500" fill="#1e293b">Inter — body &amp; UI. Fresh halal meat from local Houston farms,</text>
+  <text x="60" y="1046" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="500" fill="#1e293b">split the cost, delivered fresh. Weights 400 / 500 / 600 / 700.</text>
+
+  <!-- ── Logo usage ── -->
+  <text x="60" y="1128" font-family="Outfit, Arial, sans-serif" font-size="34" font-weight="800" fill="#0f172a">Logo</text>
+  <!-- mark on green -->
+  <g transform="translate(60,1148)">
+    <rect width="70" height="70" rx="20" fill="#15803d"/>
+    <path d="M24 19v32M46 19v32M24 35h22" stroke="#ffffff" stroke-width="6.5" stroke-linecap="round"/>
+  </g>
+  <!-- full lockup on white -->
+  <g transform="translate(180,1160)">
+    <rect width="48" height="48" rx="14" fill="#15803d"/>
+    <path d="M16 13v22M32 13v22M16 24h16" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round"/>
+    <text x="62" y="38" font-family="Outfit, Arial, sans-serif" font-size="40" font-weight="900" letter-spacing="-1"><tspan fill="#1e293b">Halal</tspan><tspan fill="#15803d">iy</tspan></text>
+  </g>
+  <text x="1540" y="1195" text-anchor="end" font-size="20" fill="#94a3b8">Mark on green · Full lockup on light</text>
+</svg>
