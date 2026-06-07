@@ -11,14 +11,7 @@
   <!-- ── Header band ── -->
   <rect width="1600" height="240" fill="url(#hdr)"/>
   <circle cx="1430" cy="40" r="180" fill="#22c55e" opacity="0.10"/>
-  <g transform="translate(60,70)">
-    <rect width="100" height="100" rx="26" fill="#15803d"/>
-    <rect x="7" y="7" width="86" height="86" rx="20" fill="none" stroke="#ffffff" stroke-width="2.5"/>
-    <rect x="30" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-    <rect x="61" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-    <rect x="17" y="46.5" width="15" height="8" rx="3" fill="#ffffff"/>
-    <polygon points="31,45 67,45 75,50.5 67,56 31,56" fill="#ffffff"/>
-  </g>
+  <!-- header mark composited (100x100 @ 60,70) by render-logos.mjs -->
   <text x="185" y="125" font-family="Outfit, Arial, sans-serif" font-size="72" font-weight="900" letter-spacing="-2">
     <tspan fill="#ffffff">Halal</tspan><tspan fill="#4ade80">iy</tspan>
   </text>
@@ -58,24 +51,10 @@
   <!-- ── Logo usage ── -->
   <text x="60" y="1128" font-family="Outfit, Arial, sans-serif" font-size="34" font-weight="800" fill="#0f172a">Logo</text>
   <!-- mark on green -->
-  <g transform="translate(60,1148) scale(0.7)">
-    <rect width="100" height="100" rx="26" fill="#15803d"/>
-    <rect x="7" y="7" width="86" height="86" rx="20" fill="none" stroke="#ffffff" stroke-width="2.5"/>
-    <rect x="30" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-    <rect x="61" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-    <rect x="17" y="46.5" width="15" height="8" rx="3" fill="#ffffff"/>
-    <polygon points="31,45 67,45 75,50.5 67,56 31,56" fill="#ffffff"/>
-  </g>
+  <!-- logo-section mark composited (70x70 @ 60,1148) by render-logos.mjs -->
   <!-- full lockup on white -->
   <g transform="translate(180,1160)">
-    <g transform="scale(0.48)">
-      <rect width="100" height="100" rx="26" fill="#15803d"/>
-      <rect x="7" y="7" width="86" height="86" rx="20" fill="none" stroke="#ffffff" stroke-width="2.5"/>
-      <rect x="30" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-      <rect x="61" y="27" width="9" height="46" rx="1.5" fill="#ffffff"/>
-      <rect x="17" y="46.5" width="15" height="8" rx="3" fill="#ffffff"/>
-      <polygon points="31,45 67,45 75,50.5 67,56 31,56" fill="#ffffff"/>
-    </g>
+    <!-- lockup mark composited (48x48 @ 180,1160) by render-logos.mjs -->
     <text x="62" y="38" font-family="Outfit, Arial, sans-serif" font-size="40" font-weight="900" letter-spacing="-1"><tspan fill="#1e293b">Halal</tspan><tspan fill="#15803d">iy</tspan></text>
   </g>
   <text x="1540" y="1195" text-anchor="end" font-size="20" fill="#94a3b8">Mark on green · Full lockup on light</text>

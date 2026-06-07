@@ -12,18 +12,19 @@
 The Halaliy logo is an **"H" monogram** whose crossbar is a **butcher's knife**,
 set in a rounded green tile with a thin inner border. The full lockup pairs the
 mark with the **`HALALIY`** wordmark and a **`HALAL MEAT DELIVERY`** tagline in
-brand green. (On the website nav, the mark is paired with a lowercase `Halaliy`
-wordmark for compact legibility.)
+brand green.
 
 | Asset | File | Use |
 |---|---|---|
-| Mark (icon) | [`public/logo-mark.svg`](public/logo-mark.svg) | Avatars, app icon, favicon, tight spaces |
-| Full lockup | [`public/logo-full.svg`](public/logo-full.svg) | Headers, emails, documents, signage |
-| App icon (PNG) | `public/icon-512.png`, `icon-192.png` | App stores, PWA, social avatars |
-| Email/header (PNG) | `public/logo-full.png` | Email clients (no SVG support) |
+| Master logo | [`public/halaliy-logo.png`](public/halaliy-logo.png) | Source of truth — all assets derive from this |
+| Full lockup | [`public/logo-full.png`](public/logo-full.png) | Navbar, headers, emails, documents |
+| Mark (icon) | [`public/logo-mark.png`](public/logo-mark.png) | Avatars, tight spaces |
+| App icon | `public/icon-512.png`, `icon-192.png` | App stores, PWA, social avatars |
+| Favicon | `public/favicon-64.png` | Browser tab |
 | Social card | `public/og-image.png` | Link previews (1200×630) |
 
-**Regenerate PNGs:** `npm i sharp --no-save && node scripts/render-logos.mjs`
+**Regenerate all assets** from the master logo:
+`npm i sharp --no-save && node scripts/render-logos.mjs`
 
 ### Clear space & sizing
 - Keep clear space around the logo equal to the height of the monogram's crossbar on all sides.

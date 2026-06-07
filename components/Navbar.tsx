@@ -63,18 +63,8 @@ export default function Navbar({ user, isAdmin, orderCount, onAuthClick }: Props
       <nav className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200 shadow-sm">
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2">
-            <svg viewBox="0 0 100 100" className="w-8 h-8" aria-hidden="true">
-              <rect width="100" height="100" rx="26" fill="#15803d" />
-              <rect x="7" y="7" width="86" height="86" rx="20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
-              <rect x="30" y="27" width="9" height="46" rx="1.5" fill="#ffffff" />
-              <rect x="61" y="27" width="9" height="46" rx="1.5" fill="#ffffff" />
-              <rect x="17" y="46.5" width="15" height="8" rx="3" fill="#ffffff" />
-              <polygon points="31,45 67,45 75,50.5 67,56 31,56" fill="#ffffff" />
-            </svg>
-            <span className="font-display font-black text-slate-800 text-lg tracking-tight">
-              Halal<span className="text-green-700">iy</span>
-            </span>
+          <Link to="/" className="flex items-center">
+            <img src="/logo-full.png" alt="Halaliy — Halal Meat Delivery" className="h-9 w-auto" />
           </Link>
 
           {/* Desktop Nav */}
