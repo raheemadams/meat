@@ -68,7 +68,7 @@ export default function Navbar({ user, isAdmin, orderCount, onAuthClick }: Props
               <i className="fa-solid fa-drumstick-bite text-white text-sm"></i>
             </div>
             <span className="font-display font-black text-slate-800 text-lg tracking-tight">
-              HALAL<span className="text-green-700">MEAT</span>
+              Halal<span className="text-green-700">iy</span>
             </span>
           </Link>
 
