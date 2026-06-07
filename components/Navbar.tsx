@@ -64,9 +64,10 @@ export default function Navbar({ user, isAdmin, orderCount, onAuthClick }: Props
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-green-700 rounded-lg flex items-center justify-center">
-              <i className="fa-solid fa-drumstick-bite text-white text-sm"></i>
-            </div>
+            <svg viewBox="0 0 32 32" className="w-8 h-8" aria-hidden="true">
+              <rect width="32" height="32" rx="9" fill="#15803d" />
+              <path d="M11 8.5v15M21 8.5v15M11 16h10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+            </svg>
             <span className="font-display font-black text-slate-800 text-lg tracking-tight">
               Halal<span className="text-green-700">iy</span>
             </span>
