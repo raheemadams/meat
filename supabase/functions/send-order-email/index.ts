@@ -59,8 +59,8 @@ function buildEmailContent(event: EmailEvent, customerName: string, order: Order
     <!DOCTYPE html>
     <html><body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,sans-serif">
       <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-        <div style="background:#15803d;padding:24px 32px">
-          <h1 style="margin:0;color:#fff;font-size:20px;font-weight:800">Halaliy</h1>
+        <div style="background:#ffffff;padding:20px 32px;border-bottom:1px solid #e2e8f0">
+          <img src="${APP_URL}/logo-full.png" alt="Halaliy" width="170" height="39" style="display:block;border:0;outline:none;text-decoration:none;height:39px;width:170px" />
         </div>
         <div style="padding:32px">
           <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a">${title}</h2>

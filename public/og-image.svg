@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630" role="img" aria-label="Halaliy — Fresh. Shared. Delivered.">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#020617"/>
+      <stop offset="1" stop-color="#052e16"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <!-- soft brand glow -->
+  <circle cx="1050" cy="120" r="260" fill="#22c55e" opacity="0.10"/>
+  <circle cx="180" cy="560" r="220" fill="#f59e0b" opacity="0.08"/>
+
+  <!-- Mark -->
+  <g transform="translate(420,150)">
+    <rect width="120" height="120" rx="34" fill="#15803d"/>
+    <path d="M41 32v56M79 32v56M41 60h38" stroke="#ffffff" stroke-width="11" stroke-linecap="round"/>
+  </g>
+
+  <!-- Wordmark -->
+  <text x="600" y="360" font-family="Outfit, Arial, sans-serif" font-size="96" font-weight="900" text-anchor="middle" letter-spacing="-2">
+    <tspan fill="#ffffff">Halal</tspan><tspan fill="#4ade80">iy</tspan>
+  </text>
+
+  <!-- Tagline -->
+  <text x="600" y="430" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="600" text-anchor="middle" fill="#94a3b8">
+    Fresh. Shared. Delivered.
+  </text>
+
+  <!-- Footer URL -->
+  <text x="600" y="560" font-family="Inter, Arial, sans-serif" font-size="26" font-weight="700" text-anchor="middle" fill="#22c55e" letter-spacing="1">
+    halaliy.com
+  </text>
+</svg>
