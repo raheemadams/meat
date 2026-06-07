@@ -72,7 +72,7 @@ export default function HomePage({ onSelectAnimal, isLoggedIn }: Props) {
                 className="bg-green-500 hover:bg-green-400 text-white font-bold px-7 py-3.5 rounded-xl transition-all flex items-center gap-2 shadow-lg shadow-green-500/30"
               >
                 <i className="fa-solid fa-store"></i>
-                Browse Animals
+                Order Now
               </button>
               <button
                 onClick={() => document.getElementById('how-it-works')?.scrollIntoView({ behavior: 'smooth' })}
