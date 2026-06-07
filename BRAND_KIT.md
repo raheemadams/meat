@@ -9,8 +9,11 @@
 
 ## 1. Logo
 
-The Halaliy logo is an **"H" monogram** in a rounded green tile, paired with the
-**`Halaliy`** wordmark — "Halal" in dark slate, "iy" in brand green.
+The Halaliy logo is an **"H" monogram** whose crossbar is a **butcher's knife**,
+set in a rounded green tile with a thin inner border. The full lockup pairs the
+mark with the **`HALALIY`** wordmark and a **`HALAL MEAT DELIVERY`** tagline in
+brand green. (On the website nav, the mark is paired with a lowercase `Halaliy`
+wordmark for compact legibility.)
 
 | Asset | File | Use |
 |---|---|---|

@@ -64,9 +64,13 @@ export default function Navbar({ user, isAdmin, orderCount, onAuthClick }: Props
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2">
-            <svg viewBox="0 0 32 32" className="w-8 h-8" aria-hidden="true">
-              <rect width="32" height="32" rx="9" fill="#15803d" />
-              <path d="M11 8.5v15M21 8.5v15M11 16h10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+            <svg viewBox="0 0 100 100" className="w-8 h-8" aria-hidden="true">
+              <rect width="100" height="100" rx="26" fill="#15803d" />
+              <rect x="7" y="7" width="86" height="86" rx="20" fill="none" stroke="#ffffff" strokeWidth="2.5" />
+              <rect x="30" y="27" width="9" height="46" rx="1.5" fill="#ffffff" />
+              <rect x="61" y="27" width="9" height="46" rx="1.5" fill="#ffffff" />
+              <rect x="17" y="46.5" width="15" height="8" rx="3" fill="#ffffff" />
+              <polygon points="31,45 67,45 75,50.5 67,56 31,56" fill="#ffffff" />
             </svg>
             <span className="font-display font-black text-slate-800 text-lg tracking-tight">
               Halal<span className="text-green-700">iy</span>
