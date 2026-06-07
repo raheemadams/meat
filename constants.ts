@@ -16,7 +16,7 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
   {
     id: 'goat',
     type: 'Goat',
-    pricePerUnit: 275,
+    pricePerUnit: 479,
     image: '/images/goat.png',
     description: 'Whole halal goat, fresh and ready. Split with up to 4 families.',
     canShare: true,

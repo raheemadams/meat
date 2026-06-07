@@ -42,7 +42,7 @@ function AnimalCard({ config, onSelect }: { config: AnimalConfig; onSelect: (c: 
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
         {/* Top badges */}
-        <div className="absolute top-3 left-3 flex flex-col gap-1.5">
+        <div className="absolute top-3 right-3 flex flex-col gap-1.5 items-end">
           <span className="bg-green-500 text-white text-xs font-bold px-2.5 py-1 rounded-full flex items-center gap-1 shadow-sm">
             <i className="fa-solid fa-certificate text-xs"></i>
             HALAL ✓
