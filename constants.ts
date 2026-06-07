@@ -17,7 +17,7 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     id: 'goat',
     type: 'Goat',
     pricePerUnit: 275,
-    image: 'https://images.unsplash.com/photo-1524024973431-2ad916746881?auto=format&fit=crop&q=80&w=800',
+    image: '/images/goat.png',
     description:
       'Whole Boer or Spanish goat, ethically raised and halal certified. Perfect for Eid al-Adha or any gathering. Split the cost between up to 4 families.',
     canShare: true,
@@ -29,7 +29,7 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     id: 'cow',
     type: 'Cow',
     pricePerUnit: 1800,
-    image: 'https://images.unsplash.com/photo-1546445317-29f4545e9d53?auto=format&fit=crop&q=80&w=800',
+    image: '/images/cow.png',
     description:
       'Full Texas Angus or Hereford, locally ranch-raised. Premium halal-certified beef. Share between up to 7 families to make it affordable.',
     canShare: true,
@@ -68,8 +68,8 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     id: 'cow-skin',
     type: 'Cow Skin',
     pricePerUnit: 24,
-    image: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=800',
-    description: 'Halal-certified cow skin, cleaned and ready to cook. A staple for soups, stews, and traditional dishes.',
+    image: '/images/cow-skin.png',
+    description: 'Halal-certified cow skin (ponmo), cleaned and ready to cook. A staple for soups, stews, and traditional dishes.',
     canShare: false,
     maxShares: 1,
     minQuantity: 1,
