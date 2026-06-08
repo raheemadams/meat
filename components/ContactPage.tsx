@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { APP_EMAIL, ZELLE_INFO } from '../constants';
+import { CONTACT_EMAIL, ZELLE_INFO } from '../constants';
 
 export default function ContactPage() {
   const [name, setName] = useState('');
@@ -11,7 +11,7 @@ export default function ContactPage() {
     e.preventDefault();
     const subject = encodeURIComponent(`Contact from ${name}`);
     const body = encodeURIComponent(`Name: ${name}\nEmail: ${email}\n\n${message}`);
-    window.location.href = `mailto:${APP_EMAIL}?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:${CONTACT_EMAIL}?subject=${subject}&body=${body}`;
     setSubmitted(true);
   }
 
@@ -30,7 +30,7 @@ export default function ContactPage() {
         <div className="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-5">
           {[
             { icon: 'fa-location-dot', title: 'Service Area', desc: 'Greater Houston Metropolitan Area, TX', color: 'text-green-700' },
-            { icon: 'fa-envelope', title: 'Email', desc: APP_EMAIL, color: 'text-blue-600' },
+            { icon: 'fa-envelope', title: 'Email', desc: CONTACT_EMAIL, color: 'text-blue-600' },
             { icon: 'fa-clock', title: 'Business Hours', desc: 'Mon–Sat: 8 AM – 6 PM\nSun: 9 AM – 4 PM', color: 'text-amber-600' },
           ].map((card) => (
             <div key={card.title} className="bg-slate-50 rounded-2xl p-5 border border-slate-100 text-center">

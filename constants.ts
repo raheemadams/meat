@@ -3,7 +3,8 @@ import { AnimalConfig, OrderStatus } from './types';
 export const DELIVERY_CHARGE = 35;
 export const SLAUGHTER_FEE = 20;
 
-export const APP_EMAIL = 'orders@halaliy.com';
+export const APP_EMAIL = 'orders@halaliy.com';      // transactional / Zelle / order notifications
+export const CONTACT_EMAIL = 'info@halaliy.com';    // public-facing contact / general inquiries
 export const BUSINESS_NAME = 'Halaliy';
 
 export const ZELLE_INFO = {
