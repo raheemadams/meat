@@ -423,6 +423,34 @@ function AppInner() {
     }
   }, [orders, user]);
 
+  // Admin marks a single co-buyer's share as paid (e.g. they paid by Zelle/offline).
+  const markOwnerPaid = useCallback(async (orderId: string, ownerId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    const updatedOwners = order.portionOwners.map((o) =>
+      o.id === ownerId ? { ...o, isPaid: true } : o
+    );
+    const allPaid = updatedOwners.every((o) => o.isPaid);
+    const newStatus = allPaid ? OrderStatus.CONFIRMED : order.status;
+    setOrders((prev) =>
+      prev.map((o) =>
+        o.id === orderId ? { ...o, portionOwners: updatedOwners, status: newStatus } : o
+      )
+    );
+    await supabase
+      .from('orders')
+      .update({ portion_owners: updatedOwners, status: newStatus })
+      .eq('id', orderId);
+    if (newStatus === OrderStatus.CONFIRMED) {
+      const confirmed = { ...order, portionOwners: updatedOwners, status: newStatus };
+      notifyOrderConfirmed(confirmed);
+      if (user) sendOrderEmail('order.confirmed', user, confirmed);
+      const primaryPhone = updatedOwners.find((o) => o.isPrimary)?.phone ?? '';
+      sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
+    }
+    addToast('Share marked as paid.');
+  }, [orders, user]);
+
   const updateAdminNotes = useCallback(async (orderId: string, adminNotes: string) => {
     setOrders((prev) =>
       prev.map((o) => (o.id === orderId ? { ...o, adminNotes } : o))
@@ -492,16 +520,7 @@ function AppInner() {
             }
           />
 
-          <Route
-            path="/pay/:token"
-            element={
-              <PayMyShare
-                orders={orders}
-                onPaymentComplete={updatePortionPaid}
-                addToast={addToast}
-              />
-            }
-          />
+          <Route path="/pay/:token" element={<PayMyShare />} />
 
           <Route
             path="/admin"
@@ -513,6 +532,7 @@ function AppInner() {
                   onAdvanceStatus={advanceOrderStatus}
                   onVerifyZelle={verifyZellePayment}
                   onUpdateNotes={updateAdminNotes}
+                  onMarkOwnerPaid={markOwnerPaid}
                 />
               ) : (
                 <div className="flex items-center justify-center min-h-64">

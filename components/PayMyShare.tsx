@@ -1,80 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { useParams } from 'react-router-dom';
-import { Order, PortionOwner } from '../types';
-import { BUSINESS_NAME } from '../constants';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { BUSINESS_NAME, ZELLE_INFO } from '../constants';
 
-interface Props {
-  orders: Order[];
-  onPaymentComplete: (orderId: string, paymentLinkToken: string) => void;
-  addToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY ?? '');
+const FN = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1`;
+const ANON = import.meta.env.VITE_SUPABASE_ANON_KEY ?? '';
+
+interface Share {
+  order: {
+    id: string; animalType: string; quantity: number; skinOption: string;
+    shares: number; totalPrice: number | null;
+    deliveryAddress: string; deliveryDate: string; deliveryWindow: string; status: string;
+  };
+  owner: { name: string; amount: number; isPaid: boolean };
 }
 
-export default function PayMyShare({ orders, onPaymentComplete, addToast }: Props) {
+async function callFn(name: string, body: unknown) {
+  const res = await fetch(`${FN}/${name}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', apikey: ANON, Authorization: `Bearer ${ANON}` },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
+
+// ── Stripe card form ──────────────────────────────────────────────────────────
+interface CardHandle { pay: (token: string) => Promise<{ ok: true } | { error: string }>; }
+
+const CardForm = forwardRef<CardHandle, { onErr: (m: string) => void }>(({ onErr }, ref) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  useImperativeHandle(ref, () => ({
+    async pay(token) {
+      if (!stripe || !elements) return { error: 'Payment form still loading — try again.' };
+      const intent = await callFn('pay-share', { token, action: 'create_intent' });
+      if (!intent.ok) return { error: intent.data?.error === 'already_paid' ? 'This share is already paid.' : 'Could not start payment.' };
+      const card = elements.getElement(CardElement);
+      if (!card) return { error: 'Card form not ready.' };
+      const { paymentIntent, error } = await stripe.confirmCardPayment(intent.data.clientSecret, { payment_method: { card } });
+      if (error) return { error: error.message ?? 'Payment declined.' };
+      const confirm = await callFn('pay-share', { token, action: 'confirm', paymentIntentId: paymentIntent!.id });
+      if (!confirm.ok) return { error: 'Payment captured but confirmation failed — contact support.' };
+      return { ok: true };
+    },
+  }));
+  return (
+    <div className="bg-white rounded-lg border border-slate-200 px-4 py-3">
+      <CardElement
+        options={{ style: { base: { fontSize: '14px', color: '#1e293b', '::placeholder': { color: '#94a3b8' } }, invalid: { color: '#dc2626' } } }}
+        onChange={(e) => onErr(e.error?.message ?? '')}
+      />
+    </div>
+  );
+});
+
+export default function PayMyShare() {
   const { token } = useParams<{ token: string }>();
   const [loading, setLoading] = useState(true);
+  const [share, setShare] = useState<Share | null>(null);
+  const [method, setMethod] = useState<'card' | 'zelle'>('card');
   const [paying, setPaying] = useState(false);
   const [paid, setPaid] = useState(false);
-
-  // Find the order and owner by token
-  const found = token
-    ? (() => {
-        for (const order of orders) {
-          const owner = order.portionOwners.find((o) => o.paymentLinkToken === token);
-          if (owner) return { order, owner };
-        }
-        return null;
-      })()
-    : null;
+  const [cardErr, setCardErr] = useState('');
+  const [err, setErr] = useState('');
+  const cardRef = useRef<CardHandle>(null);
 
   useEffect(() => {
-    // Simulate lookup delay
-    const t = setTimeout(() => setLoading(false), 600);
-    return () => clearTimeout(t);
-  }, []);
+    (async () => {
+      if (!token) { setLoading(false); return; }
+      const { ok, data } = await callFn('get-share', { token });
+      if (ok) { setShare(data); setPaid(!!data.owner?.isPaid); }
+      setLoading(false);
+    })();
+  }, [token]);
 
-  async function handlePay() {
-    if (!found) return;
-    setPaying(true);
-    await new Promise((r) => setTimeout(r, 1200));
-    onPaymentComplete(found.order.id, found.owner.paymentLinkToken);
-    setPaid(true);
+  async function handleCardPay() {
+    setErr(''); setPaying(true);
+    const res = cardRef.current ? await cardRef.current.pay(token!) : { error: 'Not ready' };
+    if ('error' in res) setErr(res.error);
+    else setPaid(true);
     setPaying(false);
-    addToast('Payment complete! Thank you.', 'success');
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-64">
-        <i className="fa-solid fa-spinner fa-spin text-green-700 text-2xl"></i>
-      </div>
-    );
+    return <div className="flex items-center justify-center min-h-64"><i className="fa-solid fa-spinner fa-spin text-green-700 text-2xl" /></div>;
   }
 
-  if (!found) {
+  if (!share) {
     return (
       <div className="max-w-md mx-auto px-4 py-20 text-center animate-fadeIn">
         <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i className="fa-solid fa-link-slash text-2xl text-red-500"></i>
+          <i className="fa-solid fa-link-slash text-2xl text-red-500" />
         </div>
         <h2 className="font-display font-black text-2xl text-slate-800 mb-2">Link Not Found</h2>
-        <p className="text-slate-500 text-sm">
-          This payment link is invalid or has already been used. Contact the order organizer.
-        </p>
+        <p className="text-slate-500 text-sm">This payment link is invalid or has expired. Please contact the order organizer.</p>
       </div>
     );
   }
 
-  const { order, owner } = found;
+  const { order, owner } = share;
 
-  if (owner.isPaid || paid) {
+  if (paid) {
     return (
-      <div className="max-w-md mx-auto px-4 py-20 text-center animate-fadeIn">
+      <div className="max-w-md mx-auto px-4 py-16 text-center animate-fadeIn">
         <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <i className="fa-solid fa-circle-check text-3xl text-green-600"></i>
+          <i className="fa-solid fa-circle-check text-3xl text-green-600" />
         </div>
         <h2 className="font-display font-black text-2xl text-slate-800 mb-2">Payment Complete!</h2>
         <p className="text-slate-500 text-sm mb-6">
-          Your payment of <strong>${owner.amount.toFixed(2)}</strong> for the group {order.animalType} order has been confirmed.
+          Your share of <strong>${owner.amount.toFixed(2)}</strong> for the group {order.animalType} order is confirmed.
         </p>
         <div className="bg-green-50 rounded-xl p-4 text-sm text-slate-700 border border-green-200 text-left">
           <p><span className="text-slate-400">Order:</span> <strong>{order.id}</strong></p>
@@ -87,11 +124,8 @@ export default function PayMyShare({ orders, onPaymentComplete, addToast }: Prop
 
   return (
     <div className="max-w-md mx-auto px-4 py-12 animate-fadeIn">
-      {/* Header */}
       <div className="text-center mb-8">
-        <div className="w-14 h-14 bg-green-700 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <i className="fa-solid fa-drumstick-bite text-white text-2xl"></i>
-        </div>
+        <img src="/logo-mark.png" alt={BUSINESS_NAME} className="w-14 h-14 mx-auto mb-4 rounded-2xl" />
         <h1 className="font-display font-black text-2xl text-slate-800">{BUSINESS_NAME}</h1>
         <p className="text-slate-500 text-sm mt-1">Group Halal Order — Pay Your Share</p>
       </div>
@@ -100,81 +134,72 @@ export default function PayMyShare({ orders, onPaymentComplete, addToast }: Prop
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden mb-6">
         <div className="bg-green-700 px-5 py-4">
           <p className="text-green-100 text-xs font-medium">Hello, {owner.name}!</p>
-          <p className="text-white text-lg font-bold mt-0.5">
-            You've been added to a group order.
-          </p>
+          <p className="text-white text-lg font-bold mt-0.5">You've been added to a group order.</p>
         </div>
-
         <div className="px-5 py-4 space-y-3 text-sm">
           <Detail label="Order ID" value={order.id} />
-          <Detail label="Animal" value={`${order.quantity} ${order.animalType}${order.quantity > 1 ? 's' : ''}`} />
-          <Detail label="Processing" value={order.skinOption === 'BURNT' ? 'Skin Burnt' : 'Skin Not Burnt'} />
+          <Detail label="Item" value={`${order.quantity} ${order.animalType}${order.quantity > 1 ? 's' : ''}`} />
           <Detail label="Delivery to" value={order.deliveryAddress} />
-          <Detail label="Delivery date" value={order.deliveryDate} />
-          <Detail label="Total order" value={`$${order.pricing.totalPrice.toFixed(2)}`} />
+          <Detail label="Delivery date" value={`${order.deliveryDate} · ${order.deliveryWindow}`} />
+          {order.totalPrice != null && <Detail label="Total order" value={`$${order.totalPrice.toFixed(2)}`} />}
           <Detail label="Shares" value={`${order.shares} people`} />
-          <div className="pt-2 border-t border-slate-100">
-            <div className="flex justify-between items-center">
-              <span className="font-semibold text-slate-800">Your share</span>
-              <span className="font-display font-black text-green-700 text-2xl">${owner.amount.toFixed(2)}</span>
-            </div>
+          <div className="pt-2 border-t border-slate-100 flex justify-between items-center">
+            <span className="font-semibold text-slate-800">Your share</span>
+            <span className="font-display font-black text-green-700 text-2xl">${owner.amount.toFixed(2)}</span>
           </div>
         </div>
       </div>
 
-      {/* Payment form (simulated) */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5 space-y-4">
-        <p className="text-sm font-semibold text-slate-700">Payment Details (Simulated)</p>
-
-        <input
-          defaultValue="4242 4242 4242 4242"
-          placeholder="Card Number"
-          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-        />
-        <div className="grid grid-cols-2 gap-3">
-          <input
-            defaultValue="12/28"
-            placeholder="MM/YY"
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-          <input
-            defaultValue="123"
-            placeholder="CVV"
-            className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-          />
-        </div>
-        <input
-          defaultValue={owner.name}
-          placeholder="Cardholder Name"
-          className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green-400"
-        />
-
-        <p className="text-xs text-amber-600">
-          <i className="fa-solid fa-triangle-exclamation mr-1"></i>
-          Demo mode — no real charge will occur.
-        </p>
-
-        <button
-          onClick={handlePay}
-          disabled={paying}
-          className="w-full bg-green-700 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-60 text-sm"
-        >
-          {paying ? (
-            <span><i className="fa-solid fa-spinner fa-spin mr-2"></i>Processing…</span>
-          ) : (
-            <span><i className="fa-solid fa-lock mr-2"></i>Pay ${owner.amount.toFixed(2)}</span>
-          )}
-        </button>
+      {/* Payment method tabs */}
+      <div className="flex gap-2 mb-4">
+        {(['card', 'zelle'] as const).map((m) => (
+          <button key={m} onClick={() => { setMethod(m); setErr(''); }}
+            className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-colors ${
+              method === m ? 'border-green-600 bg-green-50 text-green-700' : 'border-slate-200 text-slate-600 hover:border-green-300'}`}>
+            <i className={`fa-solid ${m === 'card' ? 'fa-credit-card' : 'fa-building-columns'} mr-1.5`} />
+            {m === 'card' ? 'Pay by Card' : 'Pay by Zelle'}
+          </button>
+        ))}
       </div>
+
+      {method === 'card' ? (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5 space-y-4">
+          <Elements stripe={stripePromise}>
+            <CardForm ref={cardRef} onErr={setCardErr} />
+            {cardErr && <p className="text-xs text-red-600">{cardErr}</p>}
+            {err && <p className="text-xs text-red-600">{err}</p>}
+            <button onClick={handleCardPay} disabled={paying}
+              className="w-full bg-green-700 hover:bg-green-600 text-white font-bold py-3 rounded-xl transition-colors disabled:opacity-60">
+              {paying ? <span><i className="fa-solid fa-spinner fa-spin mr-2" />Processing…</span> : `Pay $${owner.amount.toFixed(2)}`}
+            </button>
+            <p className="text-xs text-slate-400 text-center">Secure card payment via Stripe.</p>
+          </Elements>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm px-5 py-5 space-y-3 text-sm">
+          <p className="font-semibold text-slate-700">Pay by Zelle</p>
+          <p className="text-slate-500">Send your share of <strong>${owner.amount.toFixed(2)}</strong> via Zelle to:</p>
+          <div className="bg-slate-50 rounded-xl p-4 space-y-1.5 border border-slate-200">
+            <Detail label="Zelle email" value={ZELLE_INFO.email} />
+            <Detail label="Zelle phone" value={ZELLE_INFO.phone} />
+            <Detail label="Name" value={ZELLE_INFO.businessName} />
+            <Detail label="Reference" value={order.id} />
+          </div>
+          <p className="text-xs text-amber-600">
+            <i className="fa-solid fa-circle-info mr-1" />
+            Include the reference <strong>{order.id}</strong> so we can match your payment. Your share is marked paid once we confirm receipt.
+          </p>
+        </div>
+      )}
     </div>
   );
 }
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex justify-between">
+    <div className="flex justify-between gap-3">
       <span className="text-slate-400">{label}</span>
-      <span className="text-slate-700 font-medium text-right max-w-48 truncate">{value}</span>
+      <span className="text-slate-700 font-medium text-right">{value}</span>
     </div>
   );
 }

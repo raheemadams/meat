@@ -10,6 +10,7 @@ interface Props {
   onAdvanceStatus: (orderId: string) => void;
   onVerifyZelle: (orderId: string) => void;
   onUpdateNotes: (orderId: string, notes: string) => void;
+  onMarkOwnerPaid: (orderId: string, ownerId: string) => void;
 }
 
 const CHART_COLORS: Record<string, string> = {
@@ -66,6 +67,7 @@ export default function AdminDashboard({
   onAdvanceStatus,
   onVerifyZelle,
   onUpdateNotes,
+  onMarkOwnerPaid,
 }: Props) {
   const [filter, setFilter] = useState<'all' | 'active' | 'zelle' | 'split'>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
@@ -226,6 +228,7 @@ export default function AdminDashboard({
                 onAdvanceStatus={onAdvanceStatus}
                 onVerifyZelle={onVerifyZelle}
                 onUpdateNotes={onUpdateNotes}
+                onMarkOwnerPaid={onMarkOwnerPaid}
               />
             ))}
           </div>
@@ -255,6 +258,7 @@ function OrderRow({
   onAdvanceStatus,
   onVerifyZelle,
   onUpdateNotes,
+  onMarkOwnerPaid,
 }: {
   order: Order;
   expanded: boolean;
@@ -263,6 +267,7 @@ function OrderRow({
   onAdvanceStatus: (id: string) => void;
   onVerifyZelle: (id: string) => void;
   onUpdateNotes: (id: string, n: string) => void;
+  onMarkOwnerPaid: (orderId: string, ownerId: string) => void;
 }) {
   const next = getNextStatus(order.status);
   const paidCount = order.portionOwners.filter((o) => o.isPaid).length;
@@ -363,6 +368,14 @@ function OrderRow({
                     </div>
                     <p className="text-slate-400">{o.phone}</p>
                     <p className="text-green-700 font-medium">${o.amount.toFixed(2)}</p>
+                    {!o.isPaid && (
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onMarkOwnerPaid(order.id, o.id); }}
+                        className="mt-1.5 w-full bg-green-600 hover:bg-green-500 text-white text-xs font-semibold py-1 rounded-md transition-colors"
+                      >
+                        <i className="fa-solid fa-check mr-1"></i>Mark Paid
+                      </button>
+                    )}
                   </div>
                 ))}
               </div>
