@@ -108,7 +108,8 @@ The repo ships with a self-contained marketing toolkit alongside the app.
 - Page `<title>` and meta description set for the brand.
 
 ### Order automation (Make.com)
-- On order-confirmed, the app POSTs the order to `VITE_ORDER_WEBHOOK_URL` (a Make.com hook). Route it to email lists, CRMs, Google Sheets, Slack, etc. The request uses a keepalive fetch so it survives page navigation.
+- On every order confirmation, the app POSTs the order as `application/json` to `VITE_ORDER_WEBHOOK_URL` (a Make.com hook), which fans out via a Router to a **Telegram** alert and a **Data Store** record. Easily routed to email lists, CRMs, Google Sheets, Slack, etc.
+- **Full runbook:** [docs/ORDER_WEBHOOK.md](docs/ORDER_WEBHOOK.md) — when it fires, payload schema, Make scenario layout, field mapping (`{{1.…}}`), config, and how to test.
 
 ### Lifecycle messaging
 - **Resend** branded emails and **Twilio** SMS cover the order lifecycle (confirmed → out for delivery → delivered), useful for retention and re-engagement.
