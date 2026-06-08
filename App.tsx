@@ -106,8 +106,8 @@ async function sendSplitPaymentSms(order: Order, appUrl: string) {
 }
 
 /** POST order details to the configured webhook when an order is confirmed.
- *  Uses no-cors + text/plain to bypass browser CORS preflight, and keepalive
- *  so the request survives page navigation (e.g. redirect to /track). */
+ *  Sends application/json so Make (and other tools) auto-parse the body into
+ *  fields; keepalive so the request survives page navigation (e.g. /track). */
 function notifyOrderConfirmed(order: Order) {
   if (!ORDER_WEBHOOK_URL) return;
   const body = JSON.stringify({
@@ -131,9 +131,8 @@ function notifyOrderConfirmed(order: Order) {
   });
   fetch(ORDER_WEBHOOK_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'application/json' },
     body,
-    mode: 'no-cors',
     keepalive: true,
   }).catch(() => {/* fire-and-forget */});
 }
