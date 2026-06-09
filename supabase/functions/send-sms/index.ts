@@ -13,9 +13,26 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, content-type',
 };
 
+// Twilio requires E.164 format (e.g. +17135551234). Customers type numbers many
+// ways ("713-555-1234", "(713) 555-1234", "7135551234"), so normalize here —
+// this also fixes phones already stored on older orders.
+function toE164(raw: string): string | null {
+  const trimmed = (raw ?? '').trim();
+  const digits = trimmed.replace(/\D/g, '');
+  if (trimmed.startsWith('+') && digits.length >= 11) return `+${digits}`; // already international
+  if (digits.length === 10) return `+1${digits}`;                          // US 10-digit
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`; // US with leading 1
+  return null;                                                             // can't safely format
+}
+
 async function sendTwilioSms(to: string, body: string): Promise<{ ok: boolean; error?: string }> {
   if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_FROM) {
     return { ok: false, error: 'Twilio not configured' };
+  }
+
+  const e164 = toE164(to);
+  if (!e164) {
+    return { ok: false, error: `Invalid phone number: ${to}` };
   }
 
   const url = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Messages.json`;
@@ -27,7 +44,7 @@ async function sendTwilioSms(to: string, body: string): Promise<{ ok: boolean; e
       Authorization: `Basic ${credentials}`,
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: new URLSearchParams({ To: to, From: TWILIO_FROM, Body: body }).toString(),
+    body: new URLSearchParams({ To: e164, From: TWILIO_FROM, Body: body }).toString(),
   });
 
   if (!res.ok) {
