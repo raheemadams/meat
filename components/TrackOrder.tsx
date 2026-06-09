@@ -228,7 +228,7 @@ function OrderCard({
                   <div className="mt-2 flex gap-2">
                     <button
                       onClick={() => {
-                        const link = `${window.location.origin}${window.location.pathname}#/pay/${owner.paymentLinkToken}`;
+                        const link = `${window.location.origin}/pay/${owner.paymentLinkToken}`;
                         navigator.clipboard.writeText(link);
                         addToast('Payment link copied!', 'info');
                       }}

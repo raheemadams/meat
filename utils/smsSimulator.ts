@@ -1,7 +1,7 @@
 import { Order, PortionOwner, SimulatedSms } from '../types';
 
 export function buildSmsMessages(order: Order): SimulatedSms[] {
-  const baseUrl = window.location.origin + window.location.pathname;
+  const baseUrl = window.location.origin;
 
   return order.portionOwners
     .filter((owner) => !owner.isPrimary)
@@ -9,7 +9,7 @@ export function buildSmsMessages(order: Order): SimulatedSms[] {
       to: owner.phone,
       recipientName: owner.name,
       message: buildSmsText(owner, order),
-      paymentLink: `${baseUrl}#/pay/${owner.paymentLinkToken}`,
+      paymentLink: `${baseUrl}/pay/${owner.paymentLinkToken}`,
       orderId: order.id,
       amount: owner.amount,
       sentAt: Date.now(),

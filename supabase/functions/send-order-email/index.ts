@@ -33,7 +33,7 @@ const APP_URL = Deno.env.get('APP_URL') ?? 'https://halaliy.com';
 
 function buildEmailContent(event: EmailEvent, customerName: string, order: OrderSummary): { subject: string; html: string } {
   const first = customerName.split(' ')[0] || 'there';
-  const orderUrl = `${APP_URL}/#/track`;
+  const orderUrl = `${APP_URL}/track`;
   const skinLabel = order.skinOption === 'BURNT' ? 'Skin Burnt' : 'Standard Skinning';
   const recurring = order.subscriptionInterval
     ? `<p style="margin:0 0 8px"><strong>Recurring:</strong> Every ${order.subscriptionInterval} month${order.subscriptionInterval > 1 ? 's' : ''}</p>`

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { HashRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { Order, OrderStatus, SimulatedSms, AnimalConfig, PortionOwner } from './types';
@@ -90,7 +90,7 @@ async function sendSplitPaymentSms(order: Order, appUrl: string) {
       .map((o) => {
         const animalLabel = order.animalType === 'Chicken'
           ? `${order.quantity} chickens` : `1 ${order.animalType}`;
-        const link = `${appUrl}#/pay/${o.paymentLinkToken}`;
+        const link = `${appUrl}/pay/${o.paymentLinkToken}`;
         return {
           to: o.phone,
           body: `Assalamu Alaikum ${o.name}! You've been added to a halal ${animalLabel} order (${order.id}). Your share: $${o.amount.toFixed(2)}. Pay here: ${link}`,
@@ -324,7 +324,7 @@ function AppInner() {
     if (order.shares > 1) {
       const msgs = buildSmsMessages(order);
       setSmsLog((prev) => [...msgs, ...prev]);
-      sendSplitPaymentSms(order, `${window.location.origin}${window.location.pathname}`);
+      sendSplitPaymentSms(order, window.location.origin);
       addToast(`Order placed! SMS sent to ${msgs.length} member${msgs.length > 1 ? 's' : ''}.`);
     } else {
       addToast('Order placed successfully!');
@@ -587,8 +587,8 @@ function AppInner() {
 
 export default function App() {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <AppInner />
-    </HashRouter>
+    </BrowserRouter>
   );
 }
