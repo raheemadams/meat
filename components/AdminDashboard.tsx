@@ -19,6 +19,24 @@ const CHART_COLORS: Record<string, string> = {
   Chicken: '#d97706',
 };
 
+// Stages the admin moves orders through manually (the physical/fulfilment steps).
+// Payment stages (Awaiting Splits / Pending Verification) are excluded — those use
+// the dedicated Verify Zelle / Mark Paid actions, not a plain status bump.
+const ADVANCEABLE_STAGES: OrderStatus[] = [
+  OrderStatus.CONFIRMED,
+  OrderStatus.SLAUGHTER_SCHEDULED,
+  OrderStatus.SLAUGHTERED,
+  OrderStatus.PROCESSED,
+  OrderStatus.PACKAGED,
+  OrderStatus.OUT_FOR_DELIVERY,
+];
+
+// Advancing into these stages texts + emails the customer, so bulk actions warn first.
+const NOTIFYING_STAGES: OrderStatus[] = [
+  OrderStatus.OUT_FOR_DELIVERY,
+  OrderStatus.DELIVERED,
+];
+
 function exportOrdersCSV(orders: Order[]) {
   const headers = [
     'Order ID', 'Date', 'Animal', 'Qty', 'Skin', 'Shares',
@@ -90,6 +108,23 @@ export default function AdminDashboard({
     if (filter === 'split') return o.status === OrderStatus.AWAITING_PAYMENTS;
     return true;
   });
+
+  // Move every order currently in `stage` forward one step, in one click.
+  function bulkAdvance(stage: OrderStatus) {
+    const inStage = orders.filter((o) => o.status === stage);
+    const next = getNextStatus(stage);
+    if (inStage.length === 0 || !next) return;
+    const notifies = NOTIFYING_STAGES.includes(next);
+    const confirmMsg =
+      `Move ${inStage.length} order${inStage.length > 1 ? 's' : ''} from "${stage}" to "${next}"?` +
+      (notifies ? `\n\nThis will text & email ${inStage.length} customer${inStage.length > 1 ? 's' : ''}.` : '');
+    if (!window.confirm(confirmMsg)) return;
+    inStage.forEach((o) => onAdvanceStatus(o.id));
+  }
+
+  const bulkStages = ADVANCEABLE_STAGES
+    .map((stage) => ({ stage, next: getNextStatus(stage), count: orders.filter((o) => o.status === stage).length }))
+    .filter((s) => s.count > 0 && s.next);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8 animate-fadeIn">
@@ -163,6 +198,31 @@ export default function AdminDashboard({
               <p className="text-xs text-amber-600">These will auto-confirm once all members pay.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Batch advance */}
+      {bulkStages.length > 0 && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5 mb-6">
+          <div className="flex items-center gap-2 mb-1">
+            <i className="fa-solid fa-layer-group text-green-700"></i>
+            <h3 className="font-semibold text-slate-800 text-sm">Batch Advance</h3>
+          </div>
+          <p className="text-xs text-slate-500 mb-3">Move every order in a stage forward with one click.</p>
+          <div className="flex flex-wrap gap-2">
+            {bulkStages.map(({ stage, next, count }) => (
+              <button
+                key={stage}
+                onClick={() => bulkAdvance(stage)}
+                className="flex items-center gap-2 bg-slate-100 hover:bg-green-50 hover:text-green-800 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+              >
+                <span className="bg-white rounded-full px-2 py-0.5 text-slate-600">{count}</span>
+                {stage}
+                <i className="fa-solid fa-arrow-right text-slate-400"></i>
+                {next}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -271,6 +331,11 @@ function OrderRow({
 }) {
   const next = getNextStatus(order.status);
   const paidCount = order.portionOwners.filter((o) => o.isPaid).length;
+  // Show a one-click advance on the row for fulfilment stages (Confirmed onward).
+  // Payment stages use Verify Zelle / Mark Paid instead, so skip those here.
+  const canInlineAdvance =
+    next != null &&
+    ORDER_PIPELINE.indexOf(order.status) >= ORDER_PIPELINE.indexOf(OrderStatus.CONFIRMED);
 
   return (
     <div>
@@ -295,6 +360,16 @@ function OrderRow({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {canInlineAdvance && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAdvanceStatus(order.id); }}
+              title={`Advance to ${next}`}
+              className="flex items-center gap-1 bg-green-700 hover:bg-green-600 text-white text-xs font-semibold px-2.5 py-1 rounded-lg transition-colors"
+            >
+              <i className="fa-solid fa-forward-step"></i>
+              <span className="hidden sm:inline">{next}</span>
+            </button>
+          )}
           <span className="font-display font-black text-green-700">${order.pricing.totalPrice.toFixed(2)}</span>
           <i className={`fa-solid fa-chevron-${expanded ? 'up' : 'down'} text-slate-400 text-xs`}></i>
         </div>
