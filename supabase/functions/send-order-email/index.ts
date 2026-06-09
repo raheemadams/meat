@@ -22,7 +22,8 @@ interface OrderSummary {
 
 interface EmailRequest {
   event: EmailEvent;
-  to: string;
+  to?: string;            // fallback recipient; prefer resolving from userId
+  userId?: string;        // order owner — email is resolved server-side from this
   customerName: string;
   order: OrderSummary;
 }
@@ -129,13 +130,26 @@ Deno.serve(async (req) => {
 
   try {
     const body: EmailRequest = await req.json();
-    const { event, to, customerName, order } = body;
+    const { event, to, userId, customerName, order } = body;
 
-    if (!event || !to || !order) {
+    // Resolve the actual order owner server-side so the email reaches the
+    // customer even when an admin triggers the status change (the client `to`
+    // is whoever is logged in). Fall back to the client-supplied `to`.
+    let recipientEmail = to ?? '';
+    let recipientName = customerName;
+    if (userId) {
+      const { data: cust } = await supabase.auth.admin.getUserById(userId);
+      if (cust?.user?.email) {
+        recipientEmail = cust.user.email;
+        recipientName = (cust.user.user_metadata?.full_name as string) ?? cust.user.email.split('@')[0] ?? recipientName;
+      }
+    }
+
+    if (!event || !recipientEmail || !order) {
       return new Response(JSON.stringify({ error: 'Missing required fields' }), { status: 400, headers });
     }
 
-    const { subject, html } = buildEmailContent(event, customerName, order);
+    const { subject, html } = buildEmailContent(event, recipientName, order);
 
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -143,7 +157,7 @@ Deno.serve(async (req) => {
         'Authorization': `Bearer ${RESEND_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ from: FROM_EMAIL, to, subject, html }),
+      body: JSON.stringify({ from: FROM_EMAIL, to: recipientEmail, subject, html }),
     });
 
     if (!res.ok) {

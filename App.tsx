@@ -41,7 +41,10 @@ async function sendOrderEmail(event: EmailEvent, user: User, order: Order) {
       },
       body: JSON.stringify({
         event,
-        to: user.email,
+        // The order owner — the function resolves their email server-side so the
+        // mail reaches the customer even when an admin triggers the status change.
+        userId: order.userId,
+        to: user.email, // fallback only
         customerName: user.user_metadata?.full_name ?? user.email ?? 'Customer',
         order: {
           id: order.id,
