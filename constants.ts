@@ -131,4 +131,5 @@ export const STATUS_BADGE_COLORS: Record<OrderStatus, string> = {
   [OrderStatus.PACKAGED]:             'bg-indigo-100 text-indigo-800',
   [OrderStatus.OUT_FOR_DELIVERY]:     'bg-orange-100 text-orange-800',
   [OrderStatus.DELIVERED]:            'bg-emerald-100 text-emerald-900',
+  [OrderStatus.CANCELLED]:            'bg-red-100 text-red-700',
 };

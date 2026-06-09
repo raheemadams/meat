@@ -14,6 +14,7 @@ export enum OrderStatus {
   PACKAGED             = 'Packaged',
   OUT_FOR_DELIVERY     = 'Out for Delivery',
   DELIVERED            = 'Delivered',
+  CANCELLED            = 'Cancelled',
 }
 
 export interface BagVariant {

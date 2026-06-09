@@ -458,6 +458,36 @@ function AppInner() {
     await supabase.from('orders').update({ admin_notes: adminNotes }).eq('id', orderId);
   }, []);
 
+  // Cancel an order: the cancel-order edge function refunds card charges, marks it
+  // Cancelled, and notifies the customer (email + SMS). We optimistically flip the
+  // status and revert if the call fails.
+  const cancelOrder = useCallback(async (orderId: string, reason: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order) return;
+    setOrders((prev) =>
+      prev.map((o) => (o.id === orderId ? { ...o, status: OrderStatus.CANCELLED } : o))
+    );
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/cancel-order`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({ orderId, reason }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: order.status } : o)));
+        addToast(j.error === 'already_cancelled' ? 'Order is already cancelled.' : 'Cancel failed — try again.', 'error');
+        return;
+      }
+      const refundMsg = j.refunded > 0 ? ` Refunded $${Number(j.amount).toFixed(2)} to ${j.refunded} payment${j.refunded > 1 ? 's' : ''}.` : '';
+      addToast(`Order cancelled.${refundMsg}`);
+    } catch {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: order.status } : o)));
+      addToast('Cancel failed — try again.', 'error');
+    }
+  }, [orders]);
+
   // Regular users see only their own orders in the track view.
   // Admins see all orders in AdminDashboard (via RLS policy that grants admin full access).
   const userOrders = orders.filter((o) => o.userId === user?.id);
@@ -533,6 +563,7 @@ function AppInner() {
                   onVerifyZelle={verifyZellePayment}
                   onUpdateNotes={updateAdminNotes}
                   onMarkOwnerPaid={markOwnerPaid}
+                  onCancelOrder={cancelOrder}
                 />
               ) : (
                 <div className="flex items-center justify-center min-h-64">

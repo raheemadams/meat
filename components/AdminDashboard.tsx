@@ -11,6 +11,7 @@ interface Props {
   onVerifyZelle: (orderId: string) => void;
   onUpdateNotes: (orderId: string, notes: string) => void;
   onMarkOwnerPaid: (orderId: string, ownerId: string) => void;
+  onCancelOrder: (orderId: string, reason: string) => void;
 }
 
 const CHART_COLORS: Record<string, string> = {
@@ -86,26 +87,32 @@ export default function AdminDashboard({
   onVerifyZelle,
   onUpdateNotes,
   onMarkOwnerPaid,
+  onCancelOrder,
 }: Props) {
-  const [filter, setFilter] = useState<'all' | 'active' | 'zelle' | 'split'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'zelle' | 'split' | 'cancelled'>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  const activeOrders = orders.filter((o) => o.status !== OrderStatus.DELIVERED);
+  // Cancelled orders are excluded from active counts, revenue, and the chart.
+  const cancelledOrders = orders.filter((o) => o.status === OrderStatus.CANCELLED);
+  const activeOrders = orders.filter((o) => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.CANCELLED);
   const zelleOrders = orders.filter((o) => o.status === OrderStatus.PENDING_VERIFICATION);
   const splitOrders = orders.filter((o) => o.status === OrderStatus.AWAITING_PAYMENTS);
-  const totalRevenue = orders.reduce((sum, o) => sum + o.pricing.totalPrice, 0);
+  const totalRevenue = orders
+    .filter((o) => o.status !== OrderStatus.CANCELLED)
+    .reduce((sum, o) => sum + o.pricing.totalPrice, 0);
 
   const chartData = ['Goat', 'Cow', 'Chicken'].map((type) => ({
     name: type,
     quantity: orders
-      .filter((o) => o.animalType === type)
+      .filter((o) => o.animalType === type && o.status !== OrderStatus.CANCELLED)
       .reduce((sum, o) => sum + o.quantity, 0),
   }));
 
   const filtered = orders.filter((o) => {
-    if (filter === 'active') return o.status !== OrderStatus.DELIVERED;
+    if (filter === 'active') return o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.CANCELLED;
     if (filter === 'zelle') return o.status === OrderStatus.PENDING_VERIFICATION;
     if (filter === 'split') return o.status === OrderStatus.AWAITING_PAYMENTS;
+    if (filter === 'cancelled') return o.status === OrderStatus.CANCELLED;
     return true;
   });
 
@@ -252,6 +259,7 @@ export default function AdminDashboard({
               ['active', 'Active', activeOrders.length],
               ['zelle', 'Zelle Pending', zelleOrders.length],
               ['split', 'Awaiting Splits', splitOrders.length],
+              ['cancelled', 'Cancelled', cancelledOrders.length],
             ] as const).map(([val, label, count]) => (
               <button
                 key={val}
@@ -289,6 +297,7 @@ export default function AdminDashboard({
                 onVerifyZelle={onVerifyZelle}
                 onUpdateNotes={onUpdateNotes}
                 onMarkOwnerPaid={onMarkOwnerPaid}
+                onCancelOrder={onCancelOrder}
               />
             ))}
           </div>
@@ -319,6 +328,7 @@ function OrderRow({
   onVerifyZelle,
   onUpdateNotes,
   onMarkOwnerPaid,
+  onCancelOrder,
 }: {
   order: Order;
   expanded: boolean;
@@ -328,14 +338,26 @@ function OrderRow({
   onVerifyZelle: (id: string) => void;
   onUpdateNotes: (id: string, n: string) => void;
   onMarkOwnerPaid: (orderId: string, ownerId: string) => void;
+  onCancelOrder: (orderId: string, reason: string) => void;
 }) {
   const next = getNextStatus(order.status);
   const paidCount = order.portionOwners.filter((o) => o.isPaid).length;
+  const isCancelled = order.status === OrderStatus.CANCELLED;
   // Show a one-click advance on the row for fulfilment stages (Confirmed onward).
   // Payment stages use Verify Zelle / Mark Paid instead, so skip those here.
   const canInlineAdvance =
     next != null &&
     ORDER_PIPELINE.indexOf(order.status) >= ORDER_PIPELINE.indexOf(OrderStatus.CONFIRMED);
+
+  function handleCancel(e: React.MouseEvent) {
+    e.stopPropagation();
+    const reason = window.prompt(
+      `Cancel order ${order.id}?\n\nThis refunds any card payments and texts/emails the customer. Optionally enter a reason:`,
+      '',
+    );
+    if (reason === null) return; // user dismissed
+    onCancelOrder(order.id, reason.trim());
+  }
 
   return (
     <div>
@@ -378,43 +400,59 @@ function OrderRow({
       {expanded && (
         <div className="bg-slate-50 border-t border-slate-100 px-5 py-4 space-y-4 animate-fadeIn">
           {/* Status controls */}
-          <div className="flex flex-wrap gap-2 items-center">
-            <div className="flex-1">
-              <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>
-              <select
-                value={order.status}
-                onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderStatus)}
-                className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
-                onClick={(e) => e.stopPropagation()}
-              >
-                {ORDER_PIPELINE.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
+          {isCancelled ? (
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-800 flex items-center gap-2">
+              <i className="fa-solid fa-ban"></i>
+              <span>This order was cancelled. Any card payments were refunded and the customer was notified. See notes below for details.</span>
             </div>
-            {next && (
+          ) : (
+            <div className="flex flex-wrap gap-2 items-center">
+              <div className="flex-1">
+                <label className="block text-xs font-medium text-slate-500 mb-1">Status</label>
+                <select
+                  value={order.status}
+                  onChange={(e) => onUpdateStatus(order.id, e.target.value as OrderStatus)}
+                  className="border border-slate-200 rounded-lg px-3 py-1.5 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-green-400"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {ORDER_PIPELINE.map((s) => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+              {next && (
+                <div className="self-end">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onAdvanceStatus(order.id); }}
+                    className="bg-green-700 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <i className="fa-solid fa-forward-step mr-1"></i>
+                    Next: {next}
+                  </button>
+                </div>
+              )}
+              {order.status === OrderStatus.PENDING_VERIFICATION && order.paymentMethod === 'ZELLE' && (
+                <div className="self-end">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onVerifyZelle(order.id); }}
+                    className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                  >
+                    <i className="fa-solid fa-check mr-1"></i>
+                    Verify Zelle
+                  </button>
+                </div>
+              )}
               <div className="self-end">
                 <button
-                  onClick={(e) => { e.stopPropagation(); onAdvanceStatus(order.id); }}
-                  className="bg-green-700 hover:bg-green-600 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
+                  onClick={handleCancel}
+                  className="border border-red-200 text-red-700 hover:bg-red-50 text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
                 >
-                  <i className="fa-solid fa-forward-step mr-1"></i>
-                  Next: {next}
+                  <i className="fa-solid fa-ban mr-1"></i>
+                  Cancel order
                 </button>
               </div>
-            )}
-            {order.status === OrderStatus.PENDING_VERIFICATION && order.paymentMethod === 'ZELLE' && (
-              <div className="self-end">
-                <button
-                  onClick={(e) => { e.stopPropagation(); onVerifyZelle(order.id); }}
-                  className="bg-purple-600 hover:bg-purple-500 text-white text-xs font-semibold px-3 py-2 rounded-lg transition-colors"
-                >
-                  <i className="fa-solid fa-check mr-1"></i>
-                  Verify Zelle
-                </button>
-              </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {/* Delivery */}
           <div className="grid grid-cols-2 gap-3 text-sm text-slate-600">

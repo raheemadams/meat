@@ -84,6 +84,7 @@ function OrderCard({
   addToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }) {
   const isDelivered = order.status === OrderStatus.DELIVERED;
+  const isCancelled = order.status === OrderStatus.CANCELLED;
   const [expanded, setExpanded] = useState(!isDelivered);
 
   const stages = getTimelineStages(order);
@@ -128,6 +129,14 @@ function OrderCard({
       </button>
 
       {expanded && <>
+      {/* Cancelled banner */}
+      {isCancelled && (
+        <div className="bg-red-50 border-b border-red-200 px-5 py-3 flex items-center gap-2 text-sm text-red-800">
+          <i className="fa-solid fa-ban"></i>
+          <span>This order was cancelled. Any card payment has been refunded to your original payment method.</span>
+        </div>
+      )}
+
       {/* Awaiting payments alert */}
       {awaitingPayments && (
         <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center gap-2 text-sm text-amber-800">
@@ -148,6 +157,7 @@ function OrderCard({
       )}
 
       {/* Timeline */}
+      {!isCancelled && (
       <div className="px-5 py-5">
         <div className="flex items-start gap-2 overflow-x-auto pb-2">
           {stages.map((stage, i) => {
@@ -187,6 +197,7 @@ function OrderCard({
           })}
         </div>
       </div>
+      )}
 
       {/* Delivery info */}
       <div className="px-5 py-3 bg-slate-50 border-t border-slate-100 text-sm text-slate-600 flex flex-wrap gap-x-6 gap-y-1">
