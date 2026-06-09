@@ -3,9 +3,10 @@ import { supabase } from '../supabase';
 
 interface Props {
   onClose: () => void;
+  onSignedUp?: (name: string) => void;
 }
 
-export default function AuthModal({ onClose }: Props) {
+export default function AuthModal({ onClose, onSignedUp }: Props) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -40,6 +41,15 @@ export default function AuthModal({ onClose }: Props) {
         if (error) throw error;
         // If session is immediately available, email confirmation is disabled — close modal
         if (data.session) {
+          // Send the branded welcome email (fire-and-forget) using the new session.
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-welcome-email`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${data.session.access_token}`,
+            },
+          }).catch(() => {/* fire-and-forget */});
+          onSignedUp?.(fullName || email);
           onClose();
         } else {
           // Email confirmation required — show message instead of closing

@@ -10,15 +10,14 @@
 
 import Stripe from 'https://esm.sh/stripe@14?target=deno';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?target=deno';
+import { brandedEmail, sendBrandedEmail, EMAIL_BRAND } from '../_shared/email.ts';
 
 const stripe = new Stripe(Deno.env.get('STRIPE_SECRET_KEY') ?? '', {
   apiVersion: '2023-10-16',
   httpClient: Stripe.createFetchHttpClient(),
 });
 
-const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
-const FROM_EMAIL     = Deno.env.get('FROM_EMAIL') ?? 'orders@halaliy.com';
-const BUSINESS_NAME  = Deno.env.get('BUSINESS_NAME') ?? 'Halaliy';
+const BUSINESS_NAME = EMAIL_BRAND.BUSINESS_NAME;
 
 const TWILIO_SID  = Deno.env.get('TWILIO_ACCOUNT_SID') ?? '';
 const TWILIO_TOK  = Deno.env.get('TWILIO_AUTH_TOKEN') ?? '';
@@ -62,17 +61,6 @@ async function sendSms(to: string, body: string) {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({ To: e164, From: TWILIO_FROM, Body: body }).toString(),
-    });
-  } catch (_) { /* fire-and-forget */ }
-}
-
-async function sendEmail(to: string, subject: string, html: string) {
-  if (!RESEND_API_KEY || !to) return;
-  try {
-    await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: `${BUSINESS_NAME} <${FROM_EMAIL}>`, to, subject, html }),
     });
   } catch (_) { /* fire-and-forget */ }
 }
@@ -142,18 +130,15 @@ Deno.serve(async (req) => {
           ? `Since you paid by Zelle, we'll process your refund manually and reach out.`
           : `No card charge was found to refund.`);
 
-    await sendEmail(
-      customerEmail,
-      `Your ${BUSINESS_NAME} order ${order.id} has been cancelled`,
-      `<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;color:#1e293b">
-        <h2 style="color:#b91c1c">Order cancelled</h2>
-        <p>Assalamu Alaikum ${customerName},</p>
-        <p>Your order <strong>${order.id}</strong> (${order.quantity}× ${order.animal_type}) has been cancelled.${reason ? ` Reason: ${reason}.` : ''}</p>
-        <p>${refundLine}</p>
-        <p>If you have any questions, just reply to this email.</p>
-        <p style="color:#64748b">— ${BUSINESS_NAME}</p>
-      </div>`,
-    );
+    const cancelHtml = brandedEmail({
+      heading: 'Your order has been cancelled',
+      greetingName: customerName,
+      bodyHtml:
+        `<p style="margin:0 0 16px;color:#334155;font-size:14px">Your order <strong>${order.id}</strong> (${order.quantity}× ${order.animal_type}) has been cancelled.${reason ? ` Reason: ${reason}.` : ''}</p>` +
+        `<p style="margin:0 0 16px;color:#334155;font-size:14px">${refundLine}</p>` +
+        `<p style="margin:0 0 16px;color:#334155;font-size:14px">If you have any questions, just reply to this email.</p>`,
+    });
+    await sendBrandedEmail(customerEmail, `Your ${BUSINESS_NAME} order ${order.id} has been cancelled`, cancelHtml);
 
     const smsRefund = refundedCount > 0 ? ` A $${refundedDollars.toFixed(2)} refund is on the way.` : '';
     await sendSms(primaryPhone, `Your ${BUSINESS_NAME} order ${order.id} has been cancelled.${smsRefund} Questions? Reply here.`);

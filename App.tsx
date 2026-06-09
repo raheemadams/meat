@@ -603,7 +603,12 @@ function AppInner() {
         />
       )}
 
-      {showAuth && <AuthModal onClose={() => setShowAuth(false)} />}
+      {showAuth && (
+        <AuthModal
+          onClose={() => setShowAuth(false)}
+          onSignedUp={(name) => addToast(`Welcome to Halaliy, ${name.split(' ')[0]}! 🎉 Check your inbox.`)}
+        />
+      )}
 
       <SmsInboxSimulator messages={smsLog} />
 
