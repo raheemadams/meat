@@ -36,13 +36,16 @@ export function determineInitialStatus(
 export function getAvailableDates(): string[] {
   const CUTOFF_HOUR = 18; // 6 PM
   const LEAD_DAYS = 2;
+  const pad = (n: number) => String(n).padStart(2, '0');
   const now = new Date();
   const start = now.getHours() >= CUTOFF_HOUR ? LEAD_DAYS + 1 : LEAD_DAYS;
   const dates: string[] = [];
   for (let i = start; i < start + 7; i++) {
     const d = new Date(now);
     d.setDate(now.getDate() + i);
-    dates.push(d.toISOString().split('T')[0]);
+    // Use the LOCAL calendar date (not toISOString/UTC, which rolls late-evening
+    // times to the next day) so the dates match the 6 PM local cutoff + display.
+    dates.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
   }
   return dates;
 }
