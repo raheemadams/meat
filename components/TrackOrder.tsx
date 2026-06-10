@@ -5,7 +5,6 @@ import { formatDate } from '../utils/orderHelpers';
 
 interface Props {
   orders: Order[];
-  onSimulatePortionPaid: (orderId: string, paymentLinkToken: string) => void;
   addToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }
 
@@ -39,7 +38,7 @@ function statusIcon(status: OrderStatus): string {
   return map[status] ?? 'fa-circle';
 }
 
-export default function TrackOrder({ orders, onSimulatePortionPaid, addToast }: Props) {
+export default function TrackOrder({ orders, addToast }: Props) {
   if (orders.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-fadeIn">
@@ -66,7 +65,6 @@ export default function TrackOrder({ orders, onSimulatePortionPaid, addToast }: 
         <OrderCard
           key={order.id}
           order={order}
-          onSimulatePortionPaid={onSimulatePortionPaid}
           addToast={addToast}
         />
       ))}
@@ -76,11 +74,9 @@ export default function TrackOrder({ orders, onSimulatePortionPaid, addToast }: 
 
 function OrderCard({
   order,
-  onSimulatePortionPaid,
   addToast,
 }: {
   order: Order;
-  onSimulatePortionPaid: (orderId: string, token: string) => void;
   addToast: (msg: string, type?: 'success' | 'info' | 'error') => void;
 }) {
   const isDelivered = order.status === OrderStatus.DELIVERED;
@@ -236,25 +232,16 @@ function OrderCard({
                 <p className="text-green-700 font-semibold text-xs mt-1">${owner.amount.toFixed(2)}</p>
 
                 {!owner.isPrimary && !owner.isPaid && (
-                  <div className="mt-2 flex gap-2">
+                  <div className="mt-2">
                     <button
                       onClick={() => {
                         const link = `${window.location.origin}/pay/${owner.paymentLinkToken}`;
                         navigator.clipboard.writeText(link);
                         addToast('Payment link copied!', 'info');
                       }}
-                      className="flex-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition-colors"
+                      className="w-full text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 py-1.5 rounded-lg font-medium transition-colors"
                     >
-                      <i className="fa-solid fa-copy mr-1"></i>Copy Link
-                    </button>
-                    <button
-                      onClick={() => {
-                        onSimulatePortionPaid(order.id, owner.paymentLinkToken);
-                        addToast(`${owner.name}'s payment simulated!`);
-                      }}
-                      className="flex-1 text-xs bg-green-600 hover:bg-green-500 text-white py-1.5 rounded-lg font-medium transition-colors"
-                    >
-                      Simulate Pay
+                      <i className="fa-solid fa-copy mr-1"></i>Copy Payment Link
                     </button>
                   </div>
                 )}
