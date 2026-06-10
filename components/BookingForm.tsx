@@ -28,8 +28,17 @@ type Step = 1 | 2 | 3 | 4;
 const STEP_LABELS = ['Configure', 'Share', 'Delivery', 'Payment'];
 
 // ── Stripe card form ────────────────────────────────────────────────────────
+interface PaymentParams {
+  orderId: string;
+  animalType: string;
+  quantity: number;
+  skinOption: string;
+  shares: number;
+  bagSize?: string;
+}
+
 interface CardFormHandle {
-  confirmPayment: (amountCents: number, orderId: string) => Promise<{ paymentIntentId: string } | { error: string }>;
+  confirmPayment: (params: PaymentParams) => Promise<{ paymentIntentId: string } | { error: string }>;
 }
 
 const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void }>(
@@ -38,7 +47,7 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
     const elements = useElements();
 
     useImperativeHandle(ref, () => ({
-      async confirmPayment(amountCents, orderId) {
+      async confirmPayment(params) {
         if (!stripe || !elements) return { error: 'Stripe not ready — please try again.' };
 
         try {
@@ -52,7 +61,8 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${session?.access_token ?? ''}`,
               },
-              body: JSON.stringify({ amount: amountCents, orderId }),
+              // Server computes the charge from these — no client-supplied amount.
+              body: JSON.stringify(params),
             },
           );
 
@@ -209,10 +219,14 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
 
     if (paymentMethod === 'CARD') {
       setSubmitStatus('Processing payment…');
-      const result = await cardFormRef.current?.confirmPayment(
-        Math.round(pricing.perShareAmount * 100),
+      const result = await cardFormRef.current?.confirmPayment({
         orderId,
-      );
+        animalType: config.type,
+        quantity,
+        skinOption,
+        shares,
+        bagSize: selectedVariant?.weightLabel,
+      });
       if (!result || 'error' in result) {
         setStripeError(result?.error ?? 'Payment failed.');
         setSubmitting(false);

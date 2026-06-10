@@ -53,14 +53,32 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { amount, orderId } = await req.json();
-
-    if (!amount || typeof amount !== 'number' || amount < 50) {
-      return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400, headers });
-    }
+    const { orderId, animalType, quantity, skinOption, shares, bagSize } = await req.json();
 
     if (!orderId || typeof orderId !== 'string') {
       return new Response(JSON.stringify({ error: 'Invalid orderId' }), { status: 400, headers });
+    }
+    if (!animalType || !quantity || !shares) {
+      return new Response(JSON.stringify({ error: 'Missing order details' }), { status: 400, headers });
+    }
+
+    // Compute the charge SERVER-SIDE from the authoritative pricing function —
+    // never trust an amount sent by the client.
+    const { data: pricing, error: priceErr } = await supabase.rpc('compute_order_pricing', {
+      p_animal_type: animalType,
+      p_quantity: quantity,
+      p_skin_option: skinOption ?? 'NOT_BURNT',
+      p_shares: shares,
+      p_bag_size: bagSize ?? null,
+    });
+    if (priceErr || !pricing) {
+      console.error('[create-payment-intent] pricing failed', priceErr);
+      return new Response(JSON.stringify({ error: 'Could not price order' }), { status: 400, headers });
+    }
+
+    const amount = Math.round(Number(pricing.perShareAmount) * 100);
+    if (!amount || amount < 50) {
+      return new Response(JSON.stringify({ error: 'Invalid amount' }), { status: 400, headers });
     }
 
     const paymentIntent = await stripe.paymentIntents.create({
