@@ -1,4 +1,4 @@
-import { forwardRef, useImperativeHandle, useRef, useState, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useRef, useState, useMemo, useEffect } from 'react';
 import { User } from '@supabase/supabase-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
@@ -121,7 +121,8 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
   const [useDifferentAddress, setUseDifferentAddress] = useState(!defaultAddress);
   const [primaryPhone, setPrimaryPhone] = useState(user.user_metadata?.phone ?? '');
   const [deliveryDate, setDeliveryDate] = useState(getAvailableDates()[0]);
-  const [deliveryWindow, setDeliveryWindow] = useState(DELIVERY_WINDOWS[0]);
+  // The earliest day defaults to (and only offers) the Evening window.
+  const [deliveryWindow, setDeliveryWindow] = useState(DELIVERY_WINDOWS[DELIVERY_WINDOWS.length - 1]);
 
   // Step 4
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CARD');
@@ -143,6 +144,20 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
 
   const zelleRefCode = useMemo(() => `HMC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`, []);
   const availableDates = useMemo(() => getAvailableDates(), []);
+
+  // On the earliest delivery day, only the Evening (after-4 PM) window is
+  // available — there isn't enough lead time for an earlier slot. Later days
+  // offer all windows.
+  const EVENING_WINDOW = DELIVERY_WINDOWS[DELIVERY_WINDOWS.length - 1];
+  const isEarliestDay = deliveryDate === availableDates[0];
+  const availableWindows = isEarliestDay ? [EVENING_WINDOW] : DELIVERY_WINDOWS;
+
+  useEffect(() => {
+    if (!availableWindows.includes(deliveryWindow)) {
+      setDeliveryWindow(availableWindows[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deliveryDate]);
 
   // Adjust member array when shareCount changes
   function handleShareCountChange(n: number) {
@@ -634,8 +649,14 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
 
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">Delivery Window</label>
+                {isEarliestDay && (
+                  <p className="text-xs text-slate-500 mb-2">
+                    <i className="fa-solid fa-circle-info text-green-600 mr-1"></i>
+                    The earliest date delivers in the evening. Pick a later date for more time options.
+                  </p>
+                )}
                 <div className="space-y-2">
-                  {DELIVERY_WINDOWS.map((w) => (
+                  {availableWindows.map((w) => (
                     <button
                       key={w}
                       onClick={() => setDeliveryWindow(w)}

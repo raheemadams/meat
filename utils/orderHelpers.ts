@@ -27,13 +27,21 @@ export function determineInitialStatus(
   return OrderStatus.CONFIRMED;
 }
 
-/** Returns the next 7 calendar dates as YYYY-MM-DD strings */
+/**
+ * Available delivery dates as YYYY-MM-DD strings, with a 2-day lead time.
+ * Orders placed before the 6 PM cutoff can be delivered on day+2 (e.g. order
+ * Monday before 6 PM → earliest Wednesday). Orders placed at/after 6 PM count
+ * as the next day, pushing the earliest delivery to day+3.
+ */
 export function getAvailableDates(): string[] {
+  const CUTOFF_HOUR = 18; // 6 PM
+  const LEAD_DAYS = 2;
+  const now = new Date();
+  const start = now.getHours() >= CUTOFF_HOUR ? LEAD_DAYS + 1 : LEAD_DAYS;
   const dates: string[] = [];
-  const today = new Date();
-  for (let i = 1; i <= 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
+  for (let i = start; i < start + 7; i++) {
+    const d = new Date(now);
+    d.setDate(now.getDate() + i);
     dates.push(d.toISOString().split('T')[0]);
   }
   return dates;
