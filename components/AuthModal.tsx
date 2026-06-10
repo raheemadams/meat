@@ -68,11 +68,13 @@ export default function AuthModal({ onClose, onSignedUp }: Props) {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
         {/* Header */}
         <div className="bg-gradient-to-r from-green-700 to-green-600 px-6 py-5 flex items-center justify-between">
-          <div>
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-xl bg-white shadow-sm flex items-center justify-center flex-shrink-0">
+              <img src="/icon-192.png" alt="Halaliy" className="w-9 h-9 rounded-lg" />
+            </div>
             <h2 className="font-display text-white text-xl font-bold">
               {mode === 'login' ? 'Welcome Back' : 'Create Account'}
             </h2>
-            <p className="text-green-100 text-sm mt-0.5">Halaliy</p>
           </div>
           <button onClick={onClose} className="text-white/80 hover:text-white transition-colors">
             <i className="fa-solid fa-xmark text-xl"></i>
