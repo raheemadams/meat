@@ -28,21 +28,21 @@ Deno.serve(async (req) => {
   }
 
   const name = (user.user_metadata?.full_name as string) ?? user.email.split('@')[0];
+  const first = name.split(' ')[0];
 
   const html = brandedEmail({
-    heading: `Welcome to ${EMAIL_BRAND.BUSINESS_NAME}! 🐐`,
-    greetingName: name,
+    headerTitle: `Welcome to ${EMAIL_BRAND.BUSINESS_NAME}`,
+    subtitle: 'Fresh. Shared. Delivered.',
+    heading: `Assalamu Alaikum, ${first}`,
     bodyHtml:
-      `<p style="margin:0 0 16px;color:#334155;font-size:14px">Thank you for joining ${EMAIL_BRAND.BUSINESS_NAME} — fresh halal meat from local Houston farms, delivered to your door.</p>` +
-      `<div style="background:#f8fafc;border-radius:12px;padding:20px;margin:0 0 20px;font-size:14px;color:#334155">
-         <p style="margin:0 0 10px"><strong>Here's what you can do:</strong></p>
-         <p style="margin:0 0 8px">🐄 Order a whole goat, cow, or bulk chicken — fresh and halal.</p>
-         <p style="margin:0 0 8px">👨‍👩‍👧‍👦 Split the cost with family &amp; friends — everyone pays their share.</p>
-         <p style="margin:0 0 8px">🚚 Pick your delivery date &amp; window at checkout.</p>
-         <p style="margin:0">📦 Track every order from confirmation to your doorstep.</p>
-       </div>` +
-      `<p style="margin:0 0 16px;color:#334155;font-size:14px">Ready when you are — pick your animal and place your first order.</p>`,
-    cta: { label: 'Browse Animals', url: EMAIL_BRAND.APP_URL },
+      `<p style="margin:0 0 18px;color:#334155;font-size:15px">Welcome to ${EMAIL_BRAND.BUSINESS_NAME}. We're excited to make fresh halal meat ordering easier, cleaner, and more reliable for families in Houston.</p>` +
+      `<div style="background:#f8fafc;border:1px solid #eef2f7;border-radius:14px;padding:20px;margin:0 0 4px;font-size:14px;color:#334155;line-height:1.6">
+         <p style="margin:0 0 12px"><strong style="color:#0f172a">What you can order:</strong> whole goat, cow shares, fresh chicken, and specialty cuts.</p>
+         <p style="margin:0 0 12px"><strong style="color:#0f172a">How it works:</strong> choose your meat, select your processing preference, and schedule delivery.</p>
+         <p style="margin:0"><strong style="color:#0f172a">Our promise:</strong> fresh halal meat, clear updates, and dependable delivery.</p>
+       </div>`,
+    cta: { label: 'Start Your First Order', url: EMAIL_BRAND.APP_URL },
+    footerNote: 'JazakAllahu khairan for choosing Halaliy.',
   });
 
   const result = await sendBrandedEmail(user.email, `Welcome to ${EMAIL_BRAND.BUSINESS_NAME}!`, html);

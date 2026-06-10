@@ -130,13 +130,16 @@ Deno.serve(async (req) => {
           ? `Since you paid by Zelle, we'll process your refund manually and reach out.`
           : `No card charge was found to refund.`);
 
+    const first = (customerName || 'there').split(' ')[0];
     const cancelHtml = brandedEmail({
-      heading: 'Your order has been cancelled',
-      greetingName: customerName,
+      headerTitle: 'Order Cancelled',
+      heading: 'Your order has been cancelled.',
       bodyHtml:
-        `<p style="margin:0 0 16px;color:#334155;font-size:14px">Your order <strong>${order.id}</strong> (${order.quantity}× ${order.animal_type}) has been cancelled.${reason ? ` Reason: ${reason}.` : ''}</p>` +
-        `<p style="margin:0 0 16px;color:#334155;font-size:14px">${refundLine}</p>` +
-        `<p style="margin:0 0 16px;color:#334155;font-size:14px">If you have any questions, just reply to this email.</p>`,
+        `<p style="margin:0 0 16px;color:#334155;font-size:15px">Assalamu Alaikum ${first}, your order <strong>${order.id}</strong> (${order.quantity}× ${order.animal_type}) has been cancelled.${reason ? ` Reason: ${reason}.` : ''}</p>` +
+        `<p style="margin:0 0 16px;color:#334155;font-size:15px">${refundLine}</p>` +
+        `<p style="margin:0;color:#334155;font-size:15px">If you have any questions, just reply to this email.</p>`,
+      footerNote: 'JazakAllahu khairan for your understanding.',
+      footerCta: { label: 'Order Again', url: EMAIL_BRAND.APP_URL },
     });
     await sendBrandedEmail(customerEmail, `Your ${BUSINESS_NAME} order ${order.id} has been cancelled`, cancelHtml);
 

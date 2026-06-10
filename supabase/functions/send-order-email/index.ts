@@ -46,32 +46,41 @@ function buildEmailContent(event: EmailEvent, customerName: string, order: Order
       ${recurring}
     </div>`;
 
-  const cta = { label: 'Track Your Order', url: `${EMAIL_BRAND.APP_URL}/track` };
+  const track = { label: 'View Order Status', url: `${EMAIL_BRAND.APP_URL}/track` };
 
-  const copy: Record<EmailEvent, { subject: string; heading: string; intro: string }> = {
+  const copy: Record<EmailEvent, { subject: string; headerTitle: string; heading: string; intro: string; cta: { label: string; url: string } }> = {
     'order.confirmed': {
       subject: `Order Confirmed — ${order.id}`,
-      heading: 'Your order is confirmed!',
-      intro: `Great news — your order has been confirmed and is being prepared. We'll notify you when it's on its way.`,
+      headerTitle: 'Order Confirmed',
+      heading: 'Alhamdulillah! Your order is confirmed.',
+      intro: `we've received your order and our team will begin preparing your fresh halal meat for your selected delivery window.`,
+      cta: track,
     },
     'order.out_for_delivery': {
       subject: `Out for Delivery — ${order.id}`,
+      headerTitle: 'Out for Delivery',
       heading: 'Your order is on its way!',
-      intro: `Your order is out for delivery and will arrive during your selected window. Please be available at the address below.`,
+      intro: `your order is out for delivery and will arrive during your selected window. Please be available at the delivery address below.`,
+      cta: { label: 'Track Your Order', url: `${EMAIL_BRAND.APP_URL}/track` },
     },
     'order.delivered': {
       subject: `Delivered — ${order.id}`,
-      heading: 'Your order has been delivered!',
-      intro: `Your order has been delivered. Enjoy your meal! If you have any questions, reply to this email.`,
+      headerTitle: 'Delivered',
+      heading: 'Your order has been delivered.',
+      intro: `we hope your family enjoys fresh, quality halal meat. Your feedback helps us serve the community better.`,
+      cta: { label: 'Leave a Review', url: `mailto:${EMAIL_BRAND.SUPPORT_EMAIL}?subject=My Halaliy Order Review` },
     },
   };
 
   const c = copy[event];
+  const first = (customerName || 'there').split(' ')[0];
   const html = brandedEmail({
+    headerTitle: c.headerTitle,
     heading: c.heading,
-    greetingName: customerName,
-    bodyHtml: `<p style="margin:0 0 16px;color:#334155;font-size:14px">${c.intro}</p>${orderBlock}`,
-    cta,
+    bodyHtml: `<p style="margin:0 0 4px;color:#334155;font-size:15px">Assalamu Alaikum ${first}, ${c.intro}</p>${orderBlock}`,
+    cta: c.cta,
+    footerNote: 'JazakAllahu khairan for trusting Halaliy.',
+    footerCta: { label: 'Order Again', url: EMAIL_BRAND.APP_URL },
   });
   return { subject: c.subject, html };
 }
