@@ -636,7 +636,9 @@ function AppInner() {
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-      <footer className="bg-slate-900 text-slate-400 mt-auto">
+      <footer className="bg-slate-950 text-slate-400 mt-auto">
+        {/* Green accent strip to separate the footer from the section above */}
+        <div className="h-1 bg-gradient-to-r from-green-600 via-green-500 to-green-600"></div>
         <div className="max-w-6xl mx-auto px-4 py-12">
           <div className="grid grid-cols-2 md:grid-cols-12 gap-8">
             {/* Brand */}
@@ -653,7 +655,7 @@ function AppInner() {
 
             {/* Explore */}
             <div className="md:col-span-3">
-              <h4 className="text-white font-semibold text-sm mb-4">Explore</h4>
+              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-4">Explore</h4>
               <ul className="space-y-2.5 text-sm">
                 <li><Link to="/" className="hover:text-green-400 transition-colors">Browse Animals</Link></li>
                 <li><Link to="/track" className="hover:text-green-400 transition-colors">My Orders</Link></li>
@@ -664,7 +666,7 @@ function AppInner() {
 
             {/* Get in touch */}
             <div className="md:col-span-4">
-              <h4 className="text-white font-semibold text-sm mb-4">Get in Touch</h4>
+              <h4 className="text-white font-bold text-xs uppercase tracking-widest mb-4">Get in Touch</h4>
               <ul className="space-y-2.5 text-sm">
                 <li>
                   <a href="mailto:info@halaliy.com" className="flex items-center gap-2.5 hover:text-green-400 transition-colors">
@@ -680,7 +682,7 @@ function AppInner() {
               </ul>
               <div className="flex flex-wrap gap-2 mt-5">
                 {['Halal Certified', 'Ethically Raised', 'Locally Sourced'].map((t) => (
-                  <span key={t} className="text-xs font-medium bg-slate-800 text-slate-300 rounded-full px-3 py-1">{t}</span>
+                  <span key={t} className="text-xs font-medium bg-slate-800 text-slate-200 border border-slate-700 rounded-full px-3 py-1">{t}</span>
                 ))}
               </div>
             </div>
