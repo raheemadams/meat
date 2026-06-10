@@ -65,9 +65,10 @@ async function sendOrderEmail(event: EmailEvent, user: User, order: Order) {
   } catch {/* fire-and-forget */}
 }
 
+// Only Confirmed and Delivered text the customer. Out-for-delivery still emails,
+// just no SMS (intentionally — see notification design).
 const STATUS_SMS: Partial<Record<OrderStatus, string>> = {
-  [OrderStatus.CONFIRMED]:        "Your Halaliy order {id} has been confirmed! We'll notify you when it's on its way.",
-  [OrderStatus.OUT_FOR_DELIVERY]: "Your Halaliy order {id} is out for delivery! Expect it during your selected window.",
+  [OrderStatus.CONFIRMED]:        "Your Halaliy order {id} has been confirmed! We'll let you know when it's delivered.",
   [OrderStatus.DELIVERED]:        "Your Halaliy order {id} has been delivered. Enjoy! Questions? Reply to this message.",
 };
 
@@ -405,7 +406,6 @@ function AppInner() {
         sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
       } else if (status === OrderStatus.OUT_FOR_DELIVERY) {
         if (user) sendOrderEmail('order.out_for_delivery', user, updated);
-        sendStatusSms(OrderStatus.OUT_FOR_DELIVERY, primaryPhone, orderId);
       } else if (status === OrderStatus.DELIVERED) {
         if (user) sendOrderEmail('order.delivered', user, updated);
         sendStatusSms(OrderStatus.DELIVERED, primaryPhone, orderId);
