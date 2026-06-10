@@ -44,7 +44,7 @@ export const ANIMAL_CONFIGS: AnimalConfig[] = [
     description: 'Fresh halal chicken, delivered to your door. Minimum 5 birds.',
     canShare: false,
     maxShares: 1,
-    minQuantity: 5,
+    minQuantity: 1, // TEMP: lowered from 5 for a single-chicken go-live test — REVERT to 5
   },
   {
     id: 'goat-meat',
