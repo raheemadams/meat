@@ -649,11 +649,6 @@ function AppInner() {
                 Fresh, halal meat from local Houston farms. Order a whole goat, sheep, or cow,
                 split the cost with family and friends, and have it delivered fresh to your door.
               </p>
-              <div className="flex flex-wrap gap-2 mt-5">
-                {['Halal Certified', 'Ethically Raised', 'Locally Sourced'].map((t) => (
-                  <span key={t} className="text-xs font-medium bg-slate-800 text-slate-300 rounded-full px-3 py-1">{t}</span>
-                ))}
-              </div>
             </div>
 
             {/* Explore */}
@@ -683,6 +678,11 @@ function AppInner() {
                   <i className="fa-solid fa-clock text-green-500 w-4"></i> Mon–Sat: 8AM–6PM · Sun: 9AM–4PM
                 </li>
               </ul>
+              <div className="flex flex-wrap gap-2 mt-5">
+                {['Halal Certified', 'Ethically Raised', 'Locally Sourced'].map((t) => (
+                  <span key={t} className="text-xs font-medium bg-slate-800 text-slate-300 rounded-full px-3 py-1">{t}</span>
+                ))}
+              </div>
             </div>
           </div>
 
