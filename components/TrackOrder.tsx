@@ -81,6 +81,7 @@ function OrderCard({
 }) {
   const isDelivered = order.status === OrderStatus.DELIVERED;
   const isCancelled = order.status === OrderStatus.CANCELLED;
+  const isPendingPayment = order.status === OrderStatus.PENDING_PAYMENT;
   const [expanded, setExpanded] = useState(!isDelivered);
 
   const stages = getTimelineStages(order);
@@ -133,6 +134,14 @@ function OrderCard({
         </div>
       )}
 
+      {/* Pending payment banner */}
+      {isPendingPayment && (
+        <div className="bg-slate-50 border-b border-slate-200 px-5 py-3 flex items-center gap-2 text-sm text-slate-700">
+          <i className="fa-solid fa-clock"></i>
+          <span>Payment wasn’t completed for this order, so it hasn’t been confirmed. Please place the order again to check out.</span>
+        </div>
+      )}
+
       {/* Awaiting payments alert */}
       {awaitingPayments && (
         <div className="bg-amber-50 border-b border-amber-200 px-5 py-3 flex items-center gap-2 text-sm text-amber-800">
@@ -153,7 +162,7 @@ function OrderCard({
       )}
 
       {/* Timeline */}
-      {!isCancelled && (
+      {!isCancelled && !isPendingPayment && (
       <div className="px-5 py-5">
         <div className="flex items-start gap-2 overflow-x-auto pb-2">
           {stages.map((stage, i) => {

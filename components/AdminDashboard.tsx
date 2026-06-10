@@ -92,19 +92,20 @@ export default function AdminDashboard({
   const [filter, setFilter] = useState<'all' | 'active' | 'zelle' | 'split' | 'cancelled'>('all');
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
-  // Cancelled orders are excluded from active counts, revenue, and the chart.
+  // Cancelled and not-yet-paid orders are excluded from active counts, revenue, and the chart.
+  const isCountable = (o: Order) => o.status !== OrderStatus.CANCELLED && o.status !== OrderStatus.PENDING_PAYMENT;
   const cancelledOrders = orders.filter((o) => o.status === OrderStatus.CANCELLED);
-  const activeOrders = orders.filter((o) => o.status !== OrderStatus.DELIVERED && o.status !== OrderStatus.CANCELLED);
+  const activeOrders = orders.filter((o) => o.status !== OrderStatus.DELIVERED && isCountable(o));
   const zelleOrders = orders.filter((o) => o.status === OrderStatus.PENDING_VERIFICATION);
   const splitOrders = orders.filter((o) => o.status === OrderStatus.AWAITING_PAYMENTS);
   const totalRevenue = orders
-    .filter((o) => o.status !== OrderStatus.CANCELLED)
+    .filter(isCountable)
     .reduce((sum, o) => sum + o.pricing.totalPrice, 0);
 
   const chartData = ['Goat', 'Cow', 'Chicken'].map((type) => ({
     name: type,
     quantity: orders
-      .filter((o) => o.animalType === type && o.status !== OrderStatus.CANCELLED)
+      .filter((o) => o.animalType === type && isCountable(o))
       .reduce((sum, o) => sum + o.quantity, 0),
   }));
 

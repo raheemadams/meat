@@ -19,6 +19,9 @@ export function determineInitialStatus(
   paymentMethod: PaymentMethod,
   shares: number
 ): OrderStatus {
+  // Card orders start as Pending Payment and are only confirmed server-side once
+  // the charge succeeds (see create-payment-intent `confirm` action).
+  if (paymentMethod === 'CARD') return OrderStatus.PENDING_PAYMENT;
   if (paymentMethod === 'ZELLE') return OrderStatus.PENDING_VERIFICATION;
   if (shares > 1) return OrderStatus.AWAITING_PAYMENTS;
   return OrderStatus.CONFIRMED;

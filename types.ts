@@ -5,6 +5,7 @@ export type SkinOption = 'BURNT' | 'NOT_BURNT';
 export type PaymentMethod = 'CARD' | 'ZELLE';
 
 export enum OrderStatus {
+  PENDING_PAYMENT      = 'Pending Payment',
   AWAITING_PAYMENTS    = 'Awaiting Split Payments',
   PENDING_VERIFICATION = 'Pending Verification',
   CONFIRMED            = 'Confirmed',

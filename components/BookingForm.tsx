@@ -14,7 +14,9 @@ interface Props {
   config: AnimalConfig;
   user: User;
   onClose: () => void;
-  onCreateOrder: (order: Order) => void;
+  onPlaceCardOrder: (order: Order) => Promise<boolean>;
+  onFinalizeCardOrder: (orderId: string, paymentIntentId: string) => Promise<boolean>;
+  onSubmitZelleOrder: (order: Order) => Promise<boolean>;
   defaultAddress?: string;
 }
 
@@ -28,17 +30,8 @@ type Step = 1 | 2 | 3 | 4;
 const STEP_LABELS = ['Configure', 'Share', 'Delivery', 'Payment'];
 
 // ── Stripe card form ────────────────────────────────────────────────────────
-interface PaymentParams {
-  orderId: string;
-  animalType: string;
-  quantity: number;
-  skinOption: string;
-  shares: number;
-  bagSize?: string;
-}
-
 interface CardFormHandle {
-  confirmPayment: (params: PaymentParams) => Promise<{ paymentIntentId: string } | { error: string }>;
+  confirmPayment: (orderId: string) => Promise<{ paymentIntentId: string } | { error: string }>;
 }
 
 const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void }>(
@@ -47,7 +40,7 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
     const elements = useElements();
 
     useImperativeHandle(ref, () => ({
-      async confirmPayment(params) {
+      async confirmPayment(orderId) {
         if (!stripe || !elements) return { error: 'Stripe not ready — please try again.' };
 
         try {
@@ -61,8 +54,8 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${session?.access_token ?? ''}`,
               },
-              // Server computes the charge from these — no client-supplied amount.
-              body: JSON.stringify(params),
+              // Server derives the amount from the stored order — never the client.
+              body: JSON.stringify({ action: 'create_intent', orderId }),
             },
           );
 
@@ -106,7 +99,7 @@ const CardForm = forwardRef<CardFormHandle, { onCardError: (msg: string) => void
 );
 
 // ── Main form ────────────────────────────────────────────────────────────────
-export default function BookingForm({ config, user, onClose, onCreateOrder, defaultAddress = '' }: Props) {
+export default function BookingForm({ config, user, onClose, onPlaceCardOrder, onFinalizeCardOrder, onSubmitZelleOrder, defaultAddress = '' }: Props) {
   const [step, setStep] = useState<Step>(1);
 
   // Step 1
@@ -215,40 +208,17 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
     setStripeError('');
 
     const orderId = generateOrderId();
-    let paymentRef: string | undefined;
 
-    if (paymentMethod === 'CARD') {
-      setSubmitStatus('Processing payment…');
-      const result = await cardFormRef.current?.confirmPayment({
-        orderId,
-        animalType: config.type,
-        quantity,
-        skinOption,
-        shares,
-        bagSize: selectedVariant?.weightLabel,
-      });
-      if (!result || 'error' in result) {
-        setStripeError(result?.error ?? 'Payment failed.');
-        setSubmitting(false);
-        setSubmitStatus('');
-        return;
-      }
-      paymentRef = result.paymentIntentId;
-    }
-
-    setSubmitStatus('Confirming order…');
-    await new Promise((r) => setTimeout(r, 400));
-
-    // Build portion owners
+    // Build portion owners. Primary starts unpaid; card orders are marked paid
+    // server-side only after the charge is verified.
     const primaryOwner: PortionOwner = {
       id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36),
       name: user.user_metadata?.full_name ?? user.email ?? 'Primary',
       phone: primaryPhone,
-      isPaid: paymentMethod === 'CARD',
+      isPaid: false,
       amount: pricing.perShareAmount,
       isPrimary: true,
       paymentMethod,
-      paymentRef,
       paymentLinkToken: generateToken(),
     };
 
@@ -284,7 +254,35 @@ export default function BookingForm({ config, user, onClose, onCreateOrder, defa
       bagSize: selectedVariant?.weightLabel,
     };
 
-    onCreateOrder(order);
+    if (paymentMethod === 'CARD') {
+      // 1) Create the order in "Pending Payment" (price set server-side).
+      const placed = await onPlaceCardOrder(order);
+      if (!placed) { setSubmitting(false); return; }
+
+      // 2) Charge the card — amount derived from the stored order, not the client.
+      setSubmitStatus('Processing payment…');
+      const result = await cardFormRef.current?.confirmPayment(orderId);
+      if (!result || 'error' in result) {
+        setStripeError(result?.error ?? 'Payment failed.');
+        setSubmitStatus('');
+        setSubmitting(false);
+        return;
+      }
+
+      // 3) Verify the charge server-side and confirm the order.
+      setSubmitStatus('Confirming order…');
+      const ok = await onFinalizeCardOrder(orderId, result.paymentIntentId);
+      if (!ok) {
+        setStripeError('We could not confirm your payment. Please contact support.');
+        setSubmitStatus('');
+        setSubmitting(false);
+        return;
+      }
+    } else {
+      const ok = await onSubmitZelleOrder(order);
+      if (!ok) { setSubmitting(false); return; }
+    }
+
     setSubmitting(false);
   }
 

@@ -122,6 +122,7 @@ export const BENEFITS = [
 ];
 
 export const STATUS_BADGE_COLORS: Record<OrderStatus, string> = {
+  [OrderStatus.PENDING_PAYMENT]:      'bg-slate-100 text-slate-600',
   [OrderStatus.AWAITING_PAYMENTS]:    'bg-amber-100 text-amber-800',
   [OrderStatus.PENDING_VERIFICATION]: 'bg-purple-100 text-purple-800',
   [OrderStatus.CONFIRMED]:            'bg-green-100 text-green-800',

@@ -315,14 +315,65 @@ function AppInner() {
     }
   }
 
-  const handleCreateOrder = useCallback(async (order: Order) => {
-    const row = mapOrderToRow(order);
-    const { error } = await supabase.from('orders').insert(row);
+  // Insert a card order in the "Pending Payment" state (price set server-side by
+  // the trigger). The charge + confirmation happen next via finalizeCardOrder.
+  const placeCardOrder = useCallback(async (order: Order): Promise<boolean> => {
+    const { error } = await supabase.from('orders').insert(mapOrderToRow(order));
+    if (error) {
+      addToast('Failed to start your order. Please try again.', 'error');
+      return false;
+    }
+    setOrders((prev) => [order, ...prev]);
+    return true;
+  }, []);
+
+  // After the card charge succeeds, the confirm action verifies it server-side and
+  // flips the order to Confirmed / Awaiting Split Payments. Then we notify + route.
+  const finalizeCardOrder = useCallback(async (orderId: string, paymentIntentId: string): Promise<boolean> => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/create-payment-intent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token ?? ''}` },
+        body: JSON.stringify({ action: 'confirm', orderId, paymentIntentId }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.ok || !j.order) {
+        addToast('Payment confirmation failed. Please contact support.', 'error');
+        return false;
+      }
+      const confirmed = mapRowToOrder(j.order);
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? confirmed : o)));
+
+      if (confirmed.status === OrderStatus.CONFIRMED) {
+        notifyOrderConfirmed(confirmed);
+        if (user) sendOrderEmail('order.confirmed', user, confirmed);
+        const primaryPhone = confirmed.portionOwners.find((o) => o.isPrimary)?.phone ?? '';
+        sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, orderId);
+      }
+      if (confirmed.shares > 1) {
+        const msgs = buildSmsMessages(confirmed);
+        setSmsLog((prev) => [...msgs, ...prev]);
+        sendSplitPaymentSms(confirmed, window.location.origin);
+      }
+
+      addToast(confirmed.shares > 1 ? 'Payment received! Co-buyers have been notified.' : 'Order confirmed — thank you!');
+      setSelectedAnimal(null);
+      navigate('/track');
+      return true;
+    } catch {
+      addToast('Payment confirmation failed. Please contact support.', 'error');
+      return false;
+    }
+  }, [navigate, user]);
+
+  // Zelle orders need no card charge — placed straight into Pending Verification.
+  const submitZelleOrder = useCallback(async (order: Order): Promise<boolean> => {
+    const { error } = await supabase.from('orders').insert(mapOrderToRow(order));
     if (error) {
       addToast('Failed to place order. Please try again.', 'error');
-      return;
+      return false;
     }
-
     setOrders((prev) => [order, ...prev]);
 
     if (order.shares > 1) {
@@ -331,19 +382,13 @@ function AppInner() {
       sendSplitPaymentSms(order, window.location.origin);
       addToast(`Order placed! SMS sent to ${msgs.length} member${msgs.length > 1 ? 's' : ''}.`);
     } else {
-      addToast('Order placed successfully!');
-    }
-
-    if (order.status === OrderStatus.CONFIRMED) {
-      notifyOrderConfirmed(order);
-      if (user) sendOrderEmail('order.confirmed', user, order);
-      const primaryPhone = order.portionOwners.find((o) => o.isPrimary)?.phone ?? '';
-      sendStatusSms(OrderStatus.CONFIRMED, primaryPhone, order.id);
+      addToast("Order placed! Complete your Zelle transfer — we'll verify it shortly.");
     }
 
     setSelectedAnimal(null);
     navigate('/track');
-  }, [navigate, user]);
+    return true;
+  }, [navigate]);
 
   const updateOrderStatus = useCallback(async (orderId: string, status: OrderStatus) => {
     setOrders((prev) =>
@@ -573,7 +618,9 @@ function AppInner() {
           config={selectedAnimal}
           user={user}
           onClose={() => setSelectedAnimal(null)}
-          onCreateOrder={handleCreateOrder}
+          onPlaceCardOrder={placeCardOrder}
+          onFinalizeCardOrder={finalizeCardOrder}
+          onSubmitZelleOrder={submitZelleOrder}
           defaultAddress={user.user_metadata?.address ?? ''}
         />
       )}
