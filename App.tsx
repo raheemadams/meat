@@ -636,15 +636,65 @@ function AppInner() {
 
       <ToastContainer toasts={toasts} onRemove={removeToast} />
 
-      <footer className="bg-slate-900 text-slate-400 text-center py-6 text-sm mt-auto">
-        <p>© {new Date().getFullYear()} Halaliy — Houston, TX</p>
-        <p className="mt-1 text-slate-500 text-xs">
-          Ethically raised · Halal certified · Community sharing
-        </p>
-        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
-          <Link to="/policies" className="text-slate-400 hover:text-green-400 transition-colors">Policies</Link>
-          <span className="text-slate-700">·</span>
-          <Link to="/contact" className="text-slate-400 hover:text-green-400 transition-colors">Contact</Link>
+      <footer className="bg-slate-900 text-slate-400 mt-auto">
+        <div className="max-w-6xl mx-auto px-4 py-12">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-8">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-5">
+              <div className="flex items-center gap-2.5 mb-4">
+                <img src="/icon-192.png" alt="Halaliy" className="w-9 h-9 rounded-lg" />
+                <span className="font-display font-black text-xl text-white">Halaliy</span>
+              </div>
+              <p className="text-sm leading-relaxed text-slate-400 max-w-sm">
+                Fresh, halal meat from local Houston farms. Order a whole goat, sheep, or cow,
+                split the cost with family and friends, and have it delivered fresh to your door.
+              </p>
+              <div className="flex flex-wrap gap-2 mt-5">
+                {['Halal Certified', 'Ethically Raised', 'Locally Sourced'].map((t) => (
+                  <span key={t} className="text-xs font-medium bg-slate-800 text-slate-300 rounded-full px-3 py-1">{t}</span>
+                ))}
+              </div>
+            </div>
+
+            {/* Explore */}
+            <div className="md:col-span-3">
+              <h4 className="text-white font-semibold text-sm mb-4">Explore</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li><Link to="/" className="hover:text-green-400 transition-colors">Browse Animals</Link></li>
+                <li><Link to="/track" className="hover:text-green-400 transition-colors">My Orders</Link></li>
+                <li><Link to="/policies" className="hover:text-green-400 transition-colors">Policies &amp; FAQs</Link></li>
+                <li><Link to="/contact" className="hover:text-green-400 transition-colors">Contact</Link></li>
+              </ul>
+            </div>
+
+            {/* Get in touch */}
+            <div className="md:col-span-4">
+              <h4 className="text-white font-semibold text-sm mb-4">Get in Touch</h4>
+              <ul className="space-y-2.5 text-sm">
+                <li>
+                  <a href="mailto:info@halaliy.com" className="flex items-center gap-2.5 hover:text-green-400 transition-colors">
+                    <i className="fa-solid fa-envelope text-green-500 w-4"></i> info@halaliy.com
+                  </a>
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <i className="fa-solid fa-location-dot text-green-500 w-4"></i> Greater Houston, TX
+                </li>
+                <li className="flex items-center gap-2.5">
+                  <i className="fa-solid fa-clock text-green-500 w-4"></i> Mon–Sat: 8AM–6PM · Sun: 9AM–4PM
+                </li>
+              </ul>
+            </div>
+          </div>
+
+          {/* Bottom bar */}
+          <div className="border-t border-slate-800 mt-10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
+            <p>© {new Date().getFullYear()} Halaliy. All rights reserved.</p>
+            <div className="flex items-center gap-5">
+              <Link to="/policies" className="hover:text-green-400 transition-colors">Policies</Link>
+              <Link to="/contact" className="hover:text-green-400 transition-colors">Contact</Link>
+              <a href="mailto:info@halaliy.com" className="hover:text-green-400 transition-colors">Support</a>
+            </div>
+          </div>
         </div>
       </footer>
     </div>
