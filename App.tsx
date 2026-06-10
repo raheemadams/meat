@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { BrowserRouter, Routes, Route, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, useNavigate, Link } from 'react-router-dom';
 import { User } from '@supabase/supabase-js';
 import { supabase } from './supabase';
 import { Order, OrderStatus, SimulatedSms, AnimalConfig, PortionOwner } from './types';
@@ -13,6 +13,7 @@ import TrackOrder from './components/TrackOrder';
 import PayMyShare from './components/PayMyShare';
 import AdminDashboard from './components/AdminDashboard';
 import ContactPage from './components/ContactPage';
+import PolicyPage from './components/PolicyPage';
 import SmsInboxSimulator from './components/SmsInboxSimulator';
 
 // Admin check: prefers the secure server-side app_metadata.role claim (set via
@@ -590,6 +591,7 @@ function AppInner() {
           />
 
           <Route path="/contact" element={<ContactPage />} />
+          <Route path="/policies" element={<PolicyPage />} />
         </Routes>
       </main>
 
@@ -619,6 +621,11 @@ function AppInner() {
         <p className="mt-1 text-slate-500 text-xs">
           Ethically raised · Halal certified · Community sharing
         </p>
+        <div className="mt-3 flex items-center justify-center gap-4 text-xs">
+          <Link to="/policies" className="text-slate-400 hover:text-green-400 transition-colors">Policies</Link>
+          <span className="text-slate-700">·</span>
+          <Link to="/contact" className="text-slate-400 hover:text-green-400 transition-colors">Contact</Link>
+        </div>
       </footer>
     </div>
   );
