@@ -1,7 +1,9 @@
 // Shared branded email helpers used by every customer-facing email
 // (order status, cancellation, welcome). Keeps one consistent Halaliy look.
 
-const APP_URL        = Deno.env.get('APP_URL') ?? 'https://halaliy.com';
+// Use the canonical www host — the apex halaliy.com issues a 308 redirect that
+// email clients won't follow for images, which breaks the logo and links.
+const APP_URL        = Deno.env.get('APP_URL') ?? 'https://www.halaliy.com';
 const FROM_EMAIL     = Deno.env.get('FROM_EMAIL') ?? 'orders@halaliy.com';
 const BUSINESS_NAME  = Deno.env.get('BUSINESS_NAME') ?? 'Halaliy';
 const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY') ?? '';
@@ -10,33 +12,54 @@ export const EMAIL_BRAND = { APP_URL, FROM_EMAIL, BUSINESS_NAME };
 
 interface BrandedEmailOpts {
   heading: string;            // big title inside the card
-  greetingName?: string;      // "Hi {name}," (first name only)
+  greetingName?: string;      // "Assalamu Alaikum {name}," (first name only)
   bodyHtml: string;           // main content (paragraphs / blocks, raw HTML)
   cta?: { label: string; url: string };
 }
 
-/** Wrap content in the Halaliy-branded HTML shell (logo header + footer). */
+/** Wrap content in the Halaliy-branded HTML shell: green header with a centered
+ *  logo icon, body, and footer. Built with email-safe inline styles. */
 export function brandedEmail({ heading, greetingName, bodyHtml, cta }: BrandedEmailOpts): string {
   const first = greetingName ? greetingName.split(' ')[0] : '';
   const greeting = first
-    ? `<p style="margin:0 0 16px;color:#64748b;font-size:14px">Assalamu Alaikum ${first},</p>`
+    ? `<p style="margin:0 0 20px;color:#475569;font-size:15px;text-align:center">Assalamu Alaikum ${first},</p>`
     : '';
   const ctaBtn = cta
-    ? `<a href="${cta.url}" style="display:inline-block;background:#15803d;color:#fff;font-weight:600;padding:12px 24px;border-radius:10px;text-decoration:none;font-size:14px;margin-top:8px">${cta.label}</a>`
+    ? `<div style="text-align:center;margin:28px 0 4px">
+         <a href="${cta.url}" style="display:inline-block;background:#15803d;color:#ffffff;font-weight:700;padding:14px 32px;border-radius:12px;text-decoration:none;font-size:15px;box-shadow:0 2px 6px rgba(21,128,61,.3)">${cta.label}</a>
+       </div>`
     : '';
 
   return `<!DOCTYPE html>
-  <html><body style="margin:0;padding:0;background:#f1f5f9;font-family:system-ui,sans-serif">
-    <div style="max-width:560px;margin:40px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08)">
-      <div style="background:#ffffff;padding:20px 32px;border-bottom:1px solid #e2e8f0">
-        <img src="${APP_URL}/logo-full.png" alt="${BUSINESS_NAME}" width="170" height="39" style="display:block;border:0;outline:none;text-decoration:none;height:39px;width:170px" />
-      </div>
-      <div style="padding:32px">
-        <h2 style="margin:0 0 8px;font-size:18px;color:#0f172a">${heading}</h2>
-        ${greeting}
-        ${bodyHtml}
-        ${ctaBtn}
-        <p style="margin:24px 0 0;color:#94a3b8;font-size:12px">${BUSINESS_NAME} · Houston, TX · <a href="${APP_URL}" style="color:#94a3b8">halaliy.com</a></p>
+  <html>
+  <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+  <body style="margin:0;padding:0;background:#eef2f6;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+    <div style="max-width:600px;margin:0 auto;padding:28px 14px">
+      <div style="background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(15,23,42,.10)">
+
+        <!-- Header: centered logo icon -->
+        <div style="background:#14532d;background:linear-gradient(135deg,#15803d 0%,#14532d 100%);padding:40px 24px 34px;text-align:center">
+          <img src="${APP_URL}/icon-192.png" alt="${BUSINESS_NAME}" width="80" height="80" style="width:80px;height:80px;border-radius:20px;display:inline-block;border:0;background:#ffffff" />
+          <div style="margin-top:16px;color:#ffffff;font-size:24px;font-weight:800;letter-spacing:.3px">${BUSINESS_NAME}</div>
+          <div style="margin-top:4px;color:#bbf7d0;font-size:13px">Fresh halal meat · Houston, TX</div>
+        </div>
+
+        <!-- Body -->
+        <div style="padding:36px 34px 8px">
+          <h1 style="margin:0 0 16px;font-size:22px;line-height:1.3;color:#0f172a;font-weight:800;text-align:center">${heading}</h1>
+          ${greeting}
+          <div style="color:#334155;font-size:15px;line-height:1.6">${bodyHtml}</div>
+          ${ctaBtn}
+        </div>
+
+        <!-- Footer -->
+        <div style="padding:28px 34px 32px;text-align:center">
+          <div style="border-top:1px solid #eef2f7;padding-top:20px">
+            <div style="color:#64748b;font-size:13px;font-weight:600">${BUSINESS_NAME}</div>
+            <div style="color:#94a3b8;font-size:12px;margin-top:3px">Houston, TX · <a href="${APP_URL}" style="color:#15803d;text-decoration:none">www.halaliy.com</a></div>
+          </div>
+        </div>
+
       </div>
     </div>
   </body></html>`;
