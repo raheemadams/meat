@@ -14,6 +14,7 @@ import PayMyShare from './components/PayMyShare';
 import AdminDashboard from './components/AdminDashboard';
 import ContactPage from './components/ContactPage';
 import PolicyPage from './components/PolicyPage';
+import FamilySharePage from './components/FamilySharePage';
 import SmsInboxSimulator from './components/SmsInboxSimulator';
 
 // Admin check: prefers the secure server-side app_metadata.role claim (set via
@@ -610,6 +611,9 @@ function AppInner() {
 
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/policies" element={<PolicyPage />} />
+          <Route path="/cowshare" element={<FamilySharePage />} />
+          <Route path="/goatshare" element={<FamilySharePage />} />
+          <Route path="/family-share" element={<FamilySharePage />} />
         </Routes>
       </main>
 
