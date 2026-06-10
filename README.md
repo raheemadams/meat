@@ -8,11 +8,12 @@
 
 | Layer | Technology |
 |---|---|
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Router (HashRouter) |
+| Frontend | React 18, TypeScript, Vite, Tailwind CSS, React Router (BrowserRouter, clean URLs) |
 | Backend | Supabase (Postgres, Auth, Realtime, Edge Functions) |
-| Payments | Stripe (card, via Payment Intents), Zelle (manual verification) |
-| Transactional email | Resend (via `send-order-email` Edge Function) |
-| Transactional SMS | Twilio (via `send-sms` Edge Function) |
+| Payments | Stripe — **order-first, server-authoritative** card Payment Intents; Zelle (manual verification) |
+| Edge Functions | `create-payment-intent` (create_intent + confirm), `pay-share`, `cancel-order`, `send-order-email`, `send-welcome-email`, `send-sms`, `get-share` — shared branded email in `_shared/email.ts` |
+| Transactional email | Resend (branded template shared across all customer emails) |
+| Transactional SMS | Twilio (via `send-sms` Edge Function; E.164-normalized server-side) |
 | Order automation | Make.com webhook on order-confirmed (`VITE_ORDER_WEBHOOK_URL`) |
 | Deployment | GitHub (`raheemadams/meat`) → Vercel, auto-deploy on push to `main` |
 | Uptime | GitHub Actions cron pings Supabase REST every 2 days to prevent free-tier pausing |
@@ -53,7 +54,8 @@ Bagged products use a **size/variant selector** in the booking form and persist 
 - **Auto-confirm** — order confirms automatically once all shares are paid
 
 ### Payments
-- **Stripe card payments** — live card processing via Stripe Payment Intents
+- **Order-first card checkout** — the order is created first (status *Pending Payment*); the charge is derived **server-side from the stored order**, and the order is confirmed only after the PaymentIntent is verified to have `succeeded`. The client cannot set its own price or mark an order paid without paying.
+- **Server-authoritative pricing** — a Postgres function (`compute_order_pricing`) + BEFORE INSERT trigger recompute every order's price and each share from a trusted catalog, overriding any client-supplied values.
 - **Zelle payments** — reference code generated; admin manually verifies
 - **Per-share pricing** — each participant sees and pays only their share
 
@@ -64,17 +66,23 @@ Bagged products use a **size/variant selector** in the booking form and persist 
 - **Split payment status** — per-member paid/pending indicator
 
 ### Admin Dashboard
-- **Order log** — all orders across users, filterable by status
-- **Status advancement** — move orders through the pipeline with one click
+- **Order log** — all orders across users, filterable by status (incl. Cancelled)
+- **One-click + batch advancement** — advance a single order from its row, or move every order in a stage forward at once
 - **Zelle verification** — mark Zelle payments as verified
+- **Cancel & refund** — cancel an order, auto-refund all card charges via Stripe (found by `orderId` metadata), and notify the customer; Zelle refunds flagged as manual
 - **Admin notes** — internal notes per order
-- **Stats overview** — revenue, active orders, products ordered
+- **Stats overview** — revenue, active orders, products ordered (excludes cancelled / unpaid)
 - **CSV export** — download order data for accounting/reporting
 
-### Notifications (live)
-- **Order emails** — branded confirmation / status / delivery emails via Resend (`send-order-email`)
-- **Order SMS** — status texts and PayMyShare links via Twilio (`send-sms`)
-- **Make.com webhook** — fires on order-confirmed for downstream automations
+### Content Pages
+- **Policies & FAQs** (`/policies`) — trust-focused, accordion-based refund/cancellation, delivery, halal, privacy, and terms, with chargeback / liability / force-majeure protections
+- **Contact** (`/contact`) — service-area map, hours, Zelle details, and a contact form
+
+### Notifications
+- **Branded emails** — one shared Halaliy template (`_shared/email.ts`) powers welcome, order confirmed / out-for-delivery / delivered, and cancellation emails via Resend. The recipient is resolved **server-side from the order owner**, so status emails reach the customer (not whoever triggered the change). Assets/links use the canonical `www.halaliy.com` host.
+- **Welcome email** — sent automatically on signup (`send-welcome-email`), plus an in-app welcome toast
+- **Order SMS** — Twilio (`send-sms`): the customer is texted on **Confirmed** and **Delivered** only; co-buyers receive their PayMyShare links. Numbers are normalized to E.164 server-side.
+- **Make.com webhook** — fires on order-confirmed for downstream automations (Telegram + Data Store)
 
 ### Auth & Profiles
 - **Supabase Auth** — email/password sign up and sign in
@@ -123,18 +131,21 @@ The repo ships with a self-contained marketing toolkit alongside the app.
 
 | Area | Status |
 |---|---|
-| RLS — own-order isolation | ✅ Users can only read/insert/update their own orders |
-| RLS — admin access | ✅ Gated by an email allow-list in policy (`info@halaliy.com`); see `006_rebrand_admin_email.sql` |
-| Edge Function auth | ✅ Verifies the caller's JWT (service-role client + `getUser(token)`); 401 on missing/invalid token |
+| RLS — own-order isolation | ✅ Users read/insert their own orders; **direct customer UPDATE removed** (`011`) — all mutations go via admin RLS or service-role functions |
+| RLS — admin access | ✅ Email allow-list (`info@halaliy.com`, `raheemadams@gmail.com`); see `007_add_personal_admin.sql` |
+| Pricing integrity | ✅ Order price + every share recomputed server-side by a trigger; can't be tampered (`012`) |
+| Payment verification | ✅ Order-first checkout confirms an order only after its PaymentIntent is verified `succeeded` (amount + orderId match) |
+| Co-buyer payments | ✅ Routed through the service-role `pay-share` Edge Function (bypasses RLS safely) |
+| Edge Function auth | ✅ Verifies the caller's JWT; `cancel-order` additionally enforces an admin allow-list |
+| Refunds | ✅ Cancellation refunds card charges via Stripe (found by `orderId` metadata) |
 | `.env` exposure | ✅ Not tracked in git; secrets set in Vercel + Supabase |
-| Order-creation race | ✅ Client state only updates after the DB insert succeeds |
 
 ### Outstanding security items
-- **PayMyShare updates bypass RLS** — secondary-payer updates should route through a service-role Edge Function rather than the primary user's client session.
-- **Zelle reference code uses `Math.random()`** (and still carries an `HMC-` prefix) — should use `crypto.randomUUID()` and the new brand prefix.
-- **No rate limiting on order creation** — authenticated users could spam orders.
+- **Pricing catalog is duplicated** — `constants.ts` (UI display) and `compute_order_pricing()` (authoritative charge) must be kept in sync when prices change; ideally serve prices from one source.
+- **Residual on the primary card charge** — the `confirm` step verifies amount + orderId, so this is effectively closed; the fully belt-and-suspenders version would also reject mismatched product params.
+- **No rate limiting on order creation** — authenticated users could create many (unpaid) *Pending Payment* orders.
+- **Abandoned *Pending Payment* orders linger** until an admin cancels them (no auto-expiry yet).
 - **No React error boundary** — unhandled component errors cause a white screen.
-- **Admin model is email-based, not role-based** — consider migrating to an `app_metadata.role = 'admin'` claim for cleaner multi-admin management.
 
 ---
 
@@ -153,7 +164,7 @@ bag_size               TEXT?  (selected weight for bagged products, e.g. '2 lb')
 delivery_address       TEXT
 delivery_date          DATE
 delivery_window        TEXT
-status                 TEXT
+status                 TEXT   (Pending Payment | Pending Verification | Awaiting Split Payments | Confirmed → Slaughter Scheduled → … → Delivered | Cancelled)
 payment_method         TEXT   (CARD | ZELLE)
 zelle_ref_code         TEXT?
 admin_notes            TEXT?
@@ -162,7 +173,9 @@ timestamp              BIGINT
 created_at             TIMESTAMPTZ
 ```
 
-Migrations live in [`supabase/migrations/`](supabase/migrations/) (001–006).
+Migrations live in [`supabase/migrations/`](supabase/migrations/) (001–015). Order pricing is enforced server-side by the `compute_order_pricing()` function + a BEFORE INSERT trigger (`012`); customer UPDATE was removed in `011`.
+
+> ⚠️ The price list in `compute_order_pricing()` must be kept in sync with `constants.ts` (`ANIMAL_CONFIGS`, `DELIVERY_CHARGE`, `SLAUGHTER_FEE`) when prices change.
 
 ---
 
@@ -176,7 +189,9 @@ npm run build        # production build → dist/
 
 Required env vars (`.env`, not committed): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_ADMIN_EMAIL`, `VITE_ORDER_WEBHOOK_URL`, `VITE_STRIPE_PUBLISHABLE_KEY`. The same vars are set in the Vercel project for production.
 
-Edge Function secrets (set via `supabase secrets set`): `RESEND_API_KEY`, `FROM_EMAIL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, Stripe keys, `ALLOWED_ORIGINS`.
+Edge Function secrets (set via `supabase secrets set`): `STRIPE_SECRET_KEY`, `RESEND_API_KEY`, `FROM_EMAIL`, `APP_URL` (= `https://www.halaliy.com`), `BUSINESS_NAME`, `CONTACT_EMAIL`, `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `ADMIN_EMAILS` (for `cancel-order`), `ORDER_WEBHOOK_URL`, `ALLOWED_ORIGINS` (plus the auto-provided `SUPABASE_URL` / `SUPABASE_SERVICE_ROLE_KEY`).
+
+> Note: `APP_URL` uses the **www** host on purpose — the apex `halaliy.com` 308-redirects, which email clients won't follow for images.
 
 ---
 
@@ -192,7 +207,7 @@ Edge Function secrets (set via `supabase secrets set`): `RESEND_API_KEY`, `FROM_
 5. **Admin: subscription management** — view/cancel active subscriptions, see next charge dates.
 6. **Admin: inventory/capacity limits** — cap orders per delivery date.
 7. **Delivery driver view** — stripped-down list of today's deliveries.
-8. **Order cancellation** — customer cancels within a window; admin anytime with refund trigger.
+8. **Auto-expire abandoned orders** — a scheduled job that cancels stale *Pending Payment* orders (card checkout abandoned before payment).
 
 ### Customer experience
 9. **Re-order button** — one-tap reorder of a previous order.

@@ -164,3 +164,13 @@ A healthy Make webhook responds with `Accepted` / HTTP 200.
 
 To capture/refresh the field structure in Make: open the Webhook module →
 **Redetermine data structure** → send a test → **OK**.
+
+---
+
+## 7. Troubleshooting
+
+**"Couldn't validate the Phone field … became a non-number" (AddRecord / Data Store)**
+The phone (`{{1.order.portionOwners[1].phone}}`) is **text** — it can contain `+`, dashes, or be empty (single-buyer card orders have no required phone). If the Data Store's **Phone** column is typed as **Number**, Make rejects it.
+- **Fix:** Data stores → Manage data structures → set the **Phone** field type to **Text**.
+- Optional: wrap empties with `{{ ifempty(1.order.portionOwners[1].phone; "—") }}`.
+- Do **not** click "Ignore all errors" — that would silently drop failed orders from the store.
