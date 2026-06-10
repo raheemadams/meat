@@ -3,7 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import { AnimalConfig, Order, PaymentMethod, PortionOwner, SkinOption, SubscriptionInterval } from '../types';
-import { calculatePricing } from '../utils/pricing';
+import { calculatePricing, isFreeDeliveryCoupon } from '../utils/pricing';
 import { generateOrderId, generateToken, determineInitialStatus, getAvailableDates, formatDate } from '../utils/orderHelpers';
 import { DELIVERY_WINDOWS, SLAUGHTER_FEE, ZELLE_INFO } from '../constants';
 import { supabase } from '../supabase';
@@ -126,6 +126,7 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
 
   // Step 4
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CARD');
+  const [coupon, setCoupon] = useState('');
   const [zelleConfirmed, setZelleConfirmed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState('');
@@ -138,9 +139,10 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
     [config, selectedVariant]
   );
   const pricing = useMemo(
-    () => calculatePricing(effectiveConfig, quantity, skinOption, shares),
-    [effectiveConfig, quantity, skinOption, shares]
+    () => calculatePricing(effectiveConfig, quantity, skinOption, shares, coupon),
+    [effectiveConfig, quantity, skinOption, shares, coupon]
   );
+  const couponApplied = isFreeDeliveryCoupon(coupon);
 
   const zelleRefCode = useMemo(() => `HMC-${Math.random().toString(36).substr(2, 6).toUpperCase()}`, []);
   const availableDates = useMemo(() => getAvailableDates(), []);
@@ -267,6 +269,7 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
       timestamp: Date.now(),
       subscriptionInterval: enableSubscription ? subscriptionInterval : undefined,
       bagSize: selectedVariant?.weightLabel,
+      couponCode: coupon.trim() ? coupon.trim().toUpperCase() : undefined,
     };
 
     if (paymentMethod === 'CARD') {
@@ -680,6 +683,27 @@ export default function BookingForm({ config, user, onClose, onPlaceCardOrder, o
             <div className="space-y-5 animate-fadeIn">
               <PriceBreakdown pricing={pricing} shares={shares} skinOption={skinOption} />
 
+              {/* Promo code */}
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">Promo code</label>
+                <input
+                  type="text"
+                  value={coupon}
+                  onChange={(e) => setCoupon(e.target.value)}
+                  placeholder="Enter code (optional)"
+                  className={`w-full border rounded-xl px-4 py-2.5 text-sm uppercase tracking-wide focus:outline-none focus:ring-2 ${
+                    couponApplied ? 'border-green-400 focus:ring-green-400' : 'border-slate-300 focus:ring-green-500'
+                  }`}
+                />
+                {coupon.trim() && (
+                  couponApplied ? (
+                    <p className="text-xs text-green-600 mt-1"><i className="fa-solid fa-circle-check mr-1"></i>Free delivery applied!</p>
+                  ) : (
+                    <p className="text-xs text-slate-400 mt-1">That code isn't valid.</p>
+                  )
+                )}
+              </div>
+
               {shares > 1 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm text-amber-800">
                   <i className="fa-solid fa-users mr-2"></i>
@@ -832,7 +856,9 @@ function PriceBreakdown({
         )}
         <div className="flex justify-between">
           <span>Delivery</span>
-          <span>${pricing.deliveryCharge.toFixed(2)}</span>
+          {pricing.deliveryCharge === 0
+            ? <span className="text-green-600 font-semibold">FREE</span>
+            : <span>${pricing.deliveryCharge.toFixed(2)}</span>}
         </div>
         <div className="flex justify-between font-bold text-slate-800 border-t border-slate-200 pt-1.5 mt-1.5">
           <span>Total</span>

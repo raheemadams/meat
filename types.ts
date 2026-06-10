@@ -78,6 +78,7 @@ export interface Order {
   adminNotes?: string;
   subscriptionInterval?: SubscriptionInterval; // undefined = one-time
   bagSize?: string; // selected weight label for bagged products, e.g. '2 lb'
+  couponCode?: string; // promo code entered at checkout (server validates/applies)
 }
 
 export interface SimulatedSms {

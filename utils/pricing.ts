@@ -1,11 +1,17 @@
-import { DELIVERY_CHARGE, SLAUGHTER_FEE } from '../constants';
+import { DELIVERY_CHARGE, SLAUGHTER_FEE, FREE_DELIVERY_COUPON } from '../constants';
 import { AnimalConfig, PricingSnapshot, SkinOption } from '../types';
+
+/** True if the code waives delivery. Mirror of the DB logic in compute_order_pricing(). */
+export function isFreeDeliveryCoupon(coupon?: string): boolean {
+  return (coupon ?? '').trim().toUpperCase() === FREE_DELIVERY_COUPON;
+}
 
 export function calculatePricing(
   config: AnimalConfig,
   quantity: number,
   skinOption: SkinOption,
-  shares: number
+  shares: number,
+  coupon?: string
 ): PricingSnapshot {
   const animalSubtotal = config.pricePerUnit * quantity;
 
@@ -17,13 +23,14 @@ export function calculatePricing(
         : SLAUGHTER_FEE
       : 0;
 
-  const totalPrice = animalSubtotal + slaughterFee + DELIVERY_CHARGE;
+  const deliveryCharge = isFreeDeliveryCoupon(coupon) ? 0 : DELIVERY_CHARGE;
+  const totalPrice = animalSubtotal + slaughterFee + deliveryCharge;
   const perShareAmount = shares > 1 ? parseFloat((totalPrice / shares).toFixed(2)) : totalPrice;
 
   return {
     animalSubtotal,
     slaughterFee,
-    deliveryCharge: DELIVERY_CHARGE,
+    deliveryCharge,
     totalPrice,
     perShareAmount,
   };

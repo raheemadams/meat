@@ -169,6 +169,7 @@ function mapRowToOrder(row: Record<string, unknown>): Order {
     timestamp: row.timestamp as number,
     subscriptionInterval: row.subscription_interval as Order['subscriptionInterval'],
     bagSize: row.bag_size as string | undefined,
+    couponCode: row.coupon_code as string | undefined,
   };
 }
 
@@ -192,6 +193,7 @@ function mapOrderToRow(order: Order) {
     timestamp: order.timestamp,
     subscription_interval: order.subscriptionInterval ?? null,
     bag_size: order.bagSize ?? null,
+    coupon_code: order.couponCode ?? null,
   };
 }
 
