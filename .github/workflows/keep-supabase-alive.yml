@@ -6,7 +6,7 @@ name: Keep Supabase Alive
 
 on:
   schedule:
-    - cron: "0 9 */2 * *" # every 2 days at 09:00 UTC
+    - cron: "0 */12 * * *" # every 12 hours (GitHub crons can be delayed/skipped, so run often)
   workflow_dispatch: {}     # allow manual runs
 
 jobs:
@@ -26,10 +26,12 @@ jobs:
           # A lightweight read against the orders table. RLS may return no rows for
           # the anon role, but the query still executes against Postgres, which is
           # what keeps the project from auto-pausing.
-          status=$(curl -s -o /dev/null -w "%{http_code}" \
+          # '|| true' so a DNS/connection failure (project paused) doesn't abort
+          # the script before we can report it cleanly (curl still writes 000).
+          status=$(curl -s --max-time 30 -o /dev/null -w "%{http_code}" \
             "$SUPABASE_URL/rest/v1/orders?select=id&limit=1" \
             -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" || true)
 
           echo "HTTP status: $status"
 
